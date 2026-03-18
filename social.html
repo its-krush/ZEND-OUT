@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen'd Out | Social</title>
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#9de8f6; --bg2:#6060f4;
+      --card:#ffffff; --text:#0a0a3c;
+      --accent:#3f3db3; --soft:rgba(204,224,255,0.75);
+    }
+    [data-theme="dark"] {
+      --bg:#050510; --bg2:#1a1a40;
+      --card:#121225; --text:#f0f4ff;
+      --accent:#00d2ff; --soft:rgba(10,10,40,0.85);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Poppins',sans-serif;
+      background:radial-gradient(circle at 40% 30%,var(--bg2),var(--bg) 70%);
+      min-height:100vh; color:var(--text); transition:background 0.5s,color 0.5s;
+    }
+
+    /* NAV */
+    nav {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 40px; background:rgba(255,255,255,0.15);
+      backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,0.25);
+      position:sticky; top:0; z-index:200;
+    }
+    .nav-brand {
+      font-family:'Righteous',cursive; font-size:1.5rem;
+      background:linear-gradient(to right,var(--text),var(--accent));
+      -webkit-background-clip:text; background-clip:text;
+      -webkit-text-fill-color:transparent; text-decoration:none;
+    }
+    .nav-right { display:flex; align-items:center; gap:16px; }
+    .nav-right a {
+      text-decoration:none; color:var(--text); font-weight:700;
+      font-size:0.78rem; letter-spacing:1px; text-transform:uppercase;
+      opacity:0.75; transition:opacity 0.2s;
+    }
+    .nav-right a:hover { opacity:1; }
+    .logout-btn { background:rgba(244,63,94,0.15); color:#f43f5e; border:none; padding:7px 16px; border-radius:20px; font-family:'Poppins',sans-serif; font-weight:900; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:0.2s; }
+    .logout-btn:hover { background:rgba(244,63,94,0.3); }
+    .switch { position:relative; display:inline-block; width:44px; height:22px; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; cursor:pointer; inset:0; background:rgba(0,0,0,0.15); border-radius:34px; transition:.4s; }
+    .slider:before { content:""; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.4s; }
+    input:checked + .slider { background:var(--accent); }
+    input:checked + .slider:before { transform:translateX(22px); }
+
+    /* PAGE */
+    .page { max-width:680px; margin:0 auto; padding:40px 20px; }
+    .page-title { font-family:'Righteous',cursive; font-size:2.5rem; background:linear-gradient(to right,var(--text),var(--accent)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; }
+    .page-sub { font-size:0.85rem; letter-spacing:3px; text-transform:uppercase; opacity:0.5; margin-bottom:32px; }
+
+    /* TABS */
+    .social-tabs { display:flex; gap:10px; margin-bottom:28px; }
+    .s-tab { padding:10px 24px; border-radius:24px; border:none; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.82rem; cursor:pointer; transition:0.3s; background:rgba(255,255,255,0.2); color:var(--text); backdrop-filter:blur(10px); }
+    .s-tab.active { background:var(--accent); color:white; }
+    .s-tab:hover:not(.active) { background:rgba(255,255,255,0.35); }
+
+    .s-view { display:none; }
+    .s-view.active { display:block; }
+
+    /* FEED */
+    .feed { display:flex; flex-direction:column; gap:16px; }
+
+    .post-card {
+      background:var(--card); border-radius:24px; padding:22px;
+      box-shadow:0 8px 30px rgba(0,0,0,0.08);
+      opacity:0; transform:translateY(14px);
+      animation:fadeUp 0.5s ease forwards;
+    }
+    @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+    /* repost tag above card */
+    .repost-tag {
+      font-size:0.72rem; font-weight:700; color:#059669;
+      margin-bottom:10px; display:flex; align-items:center; gap:5px;
+      opacity:0.8;
+    }
+
+    .post-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .post-author { display:flex; align-items:center; gap:10px; }
+    .author-avatar { width:38px; height:38px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:0.9rem; flex-shrink:0; }
+    .author-name { font-weight:700; font-size:0.95rem; }
+    .author-date { font-size:0.75rem; opacity:0.5; }
+    .post-title { font-weight:700; font-size:1.05rem; margin-bottom:8px; }
+    .post-body { font-size:0.88rem; line-height:1.6; opacity:0.75; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+    .follow-chip { font-size:0.72rem; font-weight:900; letter-spacing:1px; text-transform:uppercase; color:var(--accent); background:var(--soft); padding:5px 14px; border-radius:20px; cursor:pointer; border:none; font-family:'Poppins',sans-serif; transition:0.2s; }
+    .follow-chip:hover { background:var(--accent); color:white; }
+    .follow-chip.following { background:rgba(16,185,129,0.15); color:#059669; }
+
+    /* ACTION ROW */
+    .post-footer { display:flex; align-items:center; gap:8px; margin-top:16px; flex-wrap:wrap; }
+
+    /* ❤️ HEART */
+    .heart-btn {
+      display:flex; align-items:center; gap:5px;
+      background:none; border:none; cursor:pointer;
+      padding:6px 12px; border-radius:20px;
+      font-family:'Poppins',sans-serif; font-weight:700; font-size:0.85rem;
+      color:var(--text); transition:background 0.2s;
+    }
+    .heart-btn:hover { background:rgba(244,63,94,0.08); }
+    .heart-btn.liked { color:#f43f5e; }
+    .heart-icon { font-size:1.2rem; display:inline-block; transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.6); }
+    .heart-btn:hover .heart-icon { transform:scale(1.2); }
+    .heart-btn.liked .heart-icon { animation:heartPop 0.4s cubic-bezier(0.175,0.885,0.32,1.6); }
+    @keyframes heartPop { 0%{transform:scale(1)} 45%{transform:scale(1.5)} 100%{transform:scale(1)} }
+
+    /* 💬 COMMENT */
+    .comment-btn {
+      display:flex; align-items:center; gap:5px;
+      background:var(--soft); border:none; padding:7px 14px;
+      border-radius:20px; cursor:pointer; font-family:'Poppins',sans-serif;
+      font-weight:700; font-size:0.82rem; color:var(--text); transition:0.2s;
+    }
+    .comment-btn:hover { background:rgba(96,96,244,0.15); color:var(--accent); }
+
+    /* 🔁 REPOST */
+    .repost-btn {
+      display:flex; align-items:center; gap:5px;
+      background:var(--soft); border:none; padding:7px 14px;
+      border-radius:20px; cursor:pointer; font-family:'Poppins',sans-serif;
+      font-weight:700; font-size:0.82rem; color:var(--text); transition:0.2s;
+      margin-left:auto;
+    }
+    .repost-btn:hover   { background:rgba(16,185,129,0.15); color:#059669; }
+    .repost-btn.reposted{ background:rgba(16,185,129,0.15); color:#059669; }
+
+    /* EXPLORE */
+    .users-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+    .user-card { background:var(--card); border-radius:24px; padding:22px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.08); opacity:0; transform:translateY(16px); animation:fadeUp 0.5s ease forwards; transition:transform 0.3s; }
+    .user-card:hover { transform:translateY(-4px); }
+    .user-avatar { width:56px; height:56px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:1.3rem; margin:0 auto 12px; }
+    .user-name  { font-weight:700; font-size:1rem; margin-bottom:4px; }
+    .user-stats { font-size:0.78rem; opacity:0.55; margin-bottom:14px; }
+    .follow-btn { width:100%; padding:9px; border-radius:16px; border:none; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.8rem; cursor:pointer; transition:0.3s; background:var(--accent); color:white; }
+    .follow-btn.following { background:rgba(16,185,129,0.15); color:#059669; }
+    .follow-btn:hover { filter:brightness(1.1); }
+
+    .empty-note { text-align:center; opacity:0.45; font-size:0.9rem; padding:50px 0; }
+
+    /* ══ COMMENT MODAL ══ */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.55);
+      backdrop-filter:blur(8px); z-index:500;
+      display:none; align-items:center; justify-content:center; padding:20px;
+    }
+    .modal-overlay.open { display:flex; }
+
+    .modal {
+      background:var(--card); border-radius:28px;
+      width:100%; max-width:540px; max-height:88vh;
+      display:flex; flex-direction:column;
+      box-shadow:0 30px 80px rgba(0,0,0,0.3);
+      animation:modalIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+      overflow:hidden;
+    }
+    @keyframes modalIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+
+    .modal-header {
+      padding:18px 22px; border-bottom:1px solid rgba(0,0,0,0.07);
+      display:flex; justify-content:space-between; align-items:center; flex-shrink:0;
+    }
+    .modal-title { font-family:'Righteous',cursive; font-size:1.05rem; color:var(--accent); }
+    .modal-close { background:var(--soft); border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:1rem; color:var(--text); transition:0.2s; }
+    .modal-close:hover { background:rgba(244,63,94,0.15); color:#f43f5e; }
+
+    .modal-post { padding:18px 22px; border-bottom:1px solid rgba(0,0,0,0.07); flex-shrink:0; }
+    .modal-post-author { font-size:0.78rem; font-weight:700; color:var(--accent); margin-bottom:4px; }
+    .modal-post-title  { font-weight:700; font-size:1rem; margin-bottom:6px; }
+    .modal-post-body   { font-size:0.83rem; opacity:0.7; line-height:1.5; }
+
+    .comments-list {
+      flex:1; overflow-y:auto; padding:14px 22px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .comments-list::-webkit-scrollbar { width:4px; }
+    .comments-list::-webkit-scrollbar-thumb { background:var(--soft); border-radius:2px; }
+
+    .comment-item { display:flex; gap:10px; align-items:flex-start; }
+    .c-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; background:var(--accent); display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:0.7rem; }
+    .c-bubble { background:var(--soft); border-radius:16px; padding:9px 14px; flex:1; }
+    .c-author { font-weight:700; font-size:0.75rem; color:var(--accent); margin-bottom:2px; }
+    .c-text   { font-size:0.82rem; line-height:1.4; }
+    .no-comments { text-align:center; opacity:0.4; font-size:0.83rem; padding:16px 0; }
+
+    .modal-input-row {
+      padding:14px 22px; border-top:1px solid rgba(0,0,0,0.07);
+      display:flex; gap:10px; align-items:center; flex-shrink:0;
+    }
+    .comment-input {
+      flex:1; padding:10px 16px; border-radius:20px;
+      border:1px solid rgba(0,0,0,0.1); background:var(--soft);
+      font-family:'Poppins',sans-serif; font-size:0.85rem;
+      color:var(--text); outline:none; transition:0.2s;
+    }
+    .comment-input:focus { border-color:var(--accent); }
+    .comment-send {
+      background:var(--accent); color:white; border:none;
+      padding:10px 18px; border-radius:20px;
+      font-family:'Poppins',sans-serif; font-weight:700;
+      font-size:0.82rem; cursor:pointer; transition:0.2s;
+    }
+    .comment-send:hover { filter:brightness(1.1); }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--accent); color:white; padding:11px 26px; border-radius:30px; font-weight:700; font-size:0.82rem; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+    .toast.show { opacity:1; }
+  </style>
+  <script>(function(){ const t=localStorage.getItem('zenTheme')||'light'; document.documentElement.setAttribute('data-theme',t); })();</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="dashboard.html">Zen'd Out</a>
+  <div class="nav-right">
+    <a href="dashboard.html">🏠 Home</a>
+    <a href="journal.html">Journal</a>
+    <a href="puzzles.html">Puzzles</a>
+    <a href="analytics.html">Analytics</a>
+    <span style="font-size:0.65rem;font-weight:900;opacity:0.5;">DARK</span>
+    <label class="switch"><input type="checkbox" id="theme-toggle" onchange="toggleTheme()"><span class="slider"></span></label>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page">
+  <h1 class="page-title">🌍 Social</h1>
+  <p class="page-sub">Connect with other zen souls</p>
+
+  <div class="social-tabs">
+    <button class="s-tab active" onclick="switchTab('feed')">📰 Feed</button>
+    <button class="s-tab"       onclick="switchTab('explore')">🔍 Explore</button>
+    <button class="s-tab"       onclick="switchTab('following')">👥 Following</button>
+  </div>
+
+  <div class="s-view active" id="view-feed">
+    <div class="feed" id="feed-list"></div>
+  </div>
+  <div class="s-view" id="view-explore">
+    <div class="users-grid" id="users-list"></div>
+  </div>
+  <div class="s-view" id="view-following">
+    <div class="feed" id="following-list"></div>
+  </div>
+</div>
+
+<!-- COMMENT MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span class="modal-title">💬 Comments</span>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-post" id="modal-post"></div>
+    <div class="comments-list" id="comments-list"></div>
+    <div class="modal-input-row">
+      <input class="comment-input" id="comment-input" placeholder="Add a comment..." maxlength="200"
+             onkeydown="if(event.key==='Enter') submitComment()">
+      <button class="comment-send" onclick="submitComment()">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const me = localStorage.getItem('zen_user');
+  if(!me) window.location.href = 'index.html';
+
+  document.getElementById('theme-toggle').checked = localStorage.getItem('zenTheme')==='dark';
+  function toggleTheme(){
+    const dark=document.getElementById('theme-toggle').checked;
+    document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+    localStorage.setItem('zenTheme',dark?'dark':'light');
+  }
+  function logout(){ localStorage.removeItem('zen_user'); window.location.href='index.html'; }
+
+  // ── TAB SWITCH ──
+  function switchTab(name){
+    document.querySelectorAll('.s-tab').forEach((t,i)=>{
+      t.classList.toggle('active',['feed','explore','following'][i]===name);
+    });
+    document.querySelectorAll('.s-view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+name).classList.add('active');
+    if(name==='feed')      renderFeed();
+    if(name==='explore')   renderExplore();
+    if(name==='following') renderFollowing();
+  }
+
+  // ── STORAGE HELPERS ──
+  function getAllEntries(){ return JSON.parse(localStorage.getItem('zen_entries')||'[]'); }
+  function saveEntries(arr){ localStorage.setItem('zen_entries',JSON.stringify(arr)); }
+  function getAllUsers(){ return Object.keys(JSON.parse(localStorage.getItem('zen_users')||'{}')).filter(u=>u!==me); }
+  function getFollowing(){ return JSON.parse(localStorage.getItem('zen_following_'+me)||'[]'); }
+  function saveFollowing(arr){ localStorage.setItem('zen_following_'+me,JSON.stringify(arr)); }
+  function getLikes(){ return JSON.parse(localStorage.getItem('zen_likes_'+me)||'[]'); }
+  function saveLikes(arr){ localStorage.setItem('zen_likes_'+me,JSON.stringify(arr)); }
+  function getReposts(){ return JSON.parse(localStorage.getItem('zen_reposts_'+me)||'[]'); }
+  function saveReposts(arr){ localStorage.setItem('zen_reposts_'+me,JSON.stringify(arr)); }
+  function getComments(entryId){ return JSON.parse(localStorage.getItem('zen_comments_'+entryId)||'[]'); }
+  function saveComments(entryId,arr){ localStorage.setItem('zen_comments_'+entryId,JSON.stringify(arr)); }
+
+  function isFollowing(user){ return getFollowing().includes(user); }
+  function isLiked(id){ return getLikes().includes(id); }
+  function isReposted(id){ return getReposts().includes(id); }
+
+  function getLikeCount(entryId){
+    let total=0;
+    Object.keys(JSON.parse(localStorage.getItem('zen_users')||'{}')).forEach(u=>{
+      if(JSON.parse(localStorage.getItem('zen_likes_'+u)||'[]').includes(entryId)) total++;
+    });
+    return total;
+  }
+  function getCommentCount(entryId){ return getComments(entryId).length; }
+  function getRepostCount(entryId){
+    let total=0;
+    Object.keys(JSON.parse(localStorage.getItem('zen_users')||'{}')).forEach(u=>{
+      if(JSON.parse(localStorage.getItem('zen_reposts_'+u)||'[]').includes(entryId)) total++;
+    });
+    return total;
+  }
+
+  // ── ACTIONS ──
+  function toggleFollow(user){
+    const f=getFollowing(), idx=f.indexOf(user);
+    if(idx===-1){ f.push(user); showToast('Following '+user+' 🎉'); }
+    else        { f.splice(idx,1); showToast('Unfollowed '+user); }
+    saveFollowing(f); renderExplore();
+  }
+
+  function toggleLike(entryId, btn){
+    const likes=getLikes(), idx=likes.indexOf(entryId);
+    if(idx===-1) likes.push(entryId);
+    else         likes.splice(idx,1);
+    saveLikes(likes);
+    const liked=likes.includes(entryId);
+    const count=getLikeCount(entryId);
+    btn.className='heart-btn'+(liked?' liked':'');
+    btn.innerHTML=`<span class="heart-icon">${liked?'❤️':'🤍'}</span> ${count}`;
+  }
+
+  function toggleRepost(entryId, btn){
+    const reposts=getReposts(), idx=reposts.indexOf(entryId);
+    if(idx===-1){
+      reposts.push(entryId);
+      showToast('Reposted to your feed! 🔁');
+    } else {
+      reposts.splice(idx,1);
+      showToast('Repost removed.');
+    }
+    saveReposts(reposts);
+    const reposted=reposts.includes(entryId);
+    const count=getRepostCount(entryId);
+    btn.className='repost-btn'+(reposted?' reposted':'');
+    btn.innerHTML=`🔁 ${count}`;
+    // re-render feed to show/hide repost
+    const activeTab=document.querySelector('.s-tab.active');
+    if(activeTab && activeTab.textContent.includes('Feed')) renderFeed();
+    if(activeTab && activeTab.textContent.includes('Following')) renderFollowing();
+  }
+
+  // ── COMMENT MODAL ──
+  let activeEntryId = null;
+
+  function openComments(entryId){
+    activeEntryId = entryId;
+    const entries = getAllEntries();
+    const entry   = entries.find(e=>e.id===entryId);
+    if(!entry) return;
+
+    document.getElementById('modal-post').innerHTML = `
+      <div class="modal-post-author">✍️ ${entry.user}</div>
+      <div class="modal-post-title">${entry.title}</div>
+      <div class="modal-post-body">${entry.content}</div>`;
+
+    renderComments(entryId);
+    document.getElementById('modal-overlay').classList.add('open');
+    setTimeout(()=>document.getElementById('comment-input').focus(), 300);
+  }
+
+  function renderComments(entryId){
+    const list     = document.getElementById('comments-list');
+    const comments = getComments(entryId);
+    if(comments.length===0){
+      list.innerHTML='<div class="no-comments">No comments yet. Be the first!</div>';
+      return;
+    }
+    list.innerHTML = comments.map(c=>`
+      <div class="comment-item">
+        <div class="c-avatar">${c.user.charAt(0).toUpperCase()}</div>
+        <div class="c-bubble">
+          <div class="c-author">${c.user}</div>
+          <div class="c-text">${c.text}</div>
+        </div>
+      </div>`).join('');
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function submitComment(){
+    const input = document.getElementById('comment-input');
+    const text  = input.value.trim();
+    if(!text) return;
+    const comments = getComments(activeEntryId);
+    comments.push({ user:me, text, date:new Date().toLocaleDateString() });
+    saveComments(activeEntryId, comments);
+    input.value = '';
+    renderComments(activeEntryId);
+    // update comment count on card
+    const btn = document.querySelector(`[data-comment-id="${activeEntryId}"]`);
+    if(btn) btn.innerHTML = `💬 ${comments.length}`;
+  }
+
+  function closeModal(e){
+    if(e.target===document.getElementById('modal-overlay')) closeModalDirect();
+  }
+  function closeModalDirect(){
+    document.getElementById('modal-overlay').classList.remove('open');
+    activeEntryId=null;
+  }
+
+  // ── BUILD POST CARD ──
+  function buildPostCard(entry, delay=0, repostedBy=null){
+    const liked      = isLiked(entry.id);
+    const reposted   = isReposted(entry.id);
+    const likeCount  = getLikeCount(entry.id);
+    const cmtCount   = getCommentCount(entry.id);
+    const rpostCount = getRepostCount(entry.id);
+    const following  = isFollowing(entry.user);
+    const isMe       = entry.user===me;
+
+    const card = document.createElement('div');
+    card.className='post-card';
+    card.style.animationDelay=delay+'s';
+
+    card.innerHTML=`
+      ${repostedBy ? `<div class="repost-tag">🔁 Reposted by ${repostedBy}</div>` : ''}
+      <div class="post-header">
+        <div class="post-author">
+          <div class="author-avatar">${entry.user.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="author-name">${entry.user}</div>
+            <div class="author-date">${entry.date||''}</div>
+          </div>
+        </div>
+        ${!isMe
+          ? `<button class="follow-chip ${following?'following':''}" onclick="quickFollow('${entry.user}',this)">${following?'✓ Following':'+ Follow'}</button>`
+          : '<span style="font-size:0.75rem;opacity:0.4;">You</span>'}
+      </div>
+      <div class="post-title">${entry.title}</div>
+      <div class="post-body">${entry.content}</div>
+      <div class="post-footer">
+        <button class="heart-btn ${liked?'liked':''}" onclick="toggleLike(${entry.id},this)">
+          <span class="heart-icon">${liked?'❤️':'🤍'}</span> ${likeCount}
+        </button>
+        <button class="comment-btn" data-comment-id="${entry.id}" onclick="openComments(${entry.id})">
+          💬 ${cmtCount}
+        </button>
+        <button class="repost-btn ${reposted?'reposted':''}" onclick="toggleRepost(${entry.id},this)">
+          🔁 ${rpostCount}
+        </button>
+      </div>`;
+    return card;
+  }
+
+  function quickFollow(user, btn){
+    toggleFollow(user);
+    const f=isFollowing(user);
+    btn.textContent=f?'✓ Following':'+ Follow';
+    btn.className='follow-chip'+(f?' following':'');
+  }
+
+  // ── RENDER FEED ──
+  function renderFeed(){
+    const list=document.getElementById('feed-list');
+    list.innerHTML='';
+
+    // collect public entries + reposts
+    let items=[];
+
+    // all public entries
+    getAllEntries().filter(e=>e.isPublic).forEach(e=>{
+      items.push({ entry:e, repostedBy:null, date:e.date||'' });
+    });
+
+    // reposts by current user
+    const myReposts=getReposts();
+    getAllEntries().filter(e=>e.isPublic&&myReposts.includes(e.id)&&e.user!==me).forEach(e=>{
+      // only add if not already in feed
+      if(!items.find(i=>i.entry.id===e.id&&i.repostedBy===me)){
+        items.push({ entry:e, repostedBy:me, date:e.date||'' });
+      }
+    });
+
+    items=items.reverse();
+
+    if(items.length===0){
+      list.innerHTML='<div class="empty-note">No public entries yet. Be the first to share!</div>';
+      return;
+    }
+    items.forEach((item,i)=>{
+      list.appendChild(buildPostCard(item.entry, i*0.06, item.repostedBy));
+    });
+  }
+
+  // ── RENDER EXPLORE ──
+  function renderExplore(){
+    const list=document.getElementById('users-list');
+    list.innerHTML='';
+    const users=getAllUsers();
+    if(users.length===0){
+      list.innerHTML='<div class="empty-note">No other users yet. Share the app with friends!</div>';
+      return;
+    }
+    users.forEach((user,i)=>{
+      const f=isFollowing(user);
+      const cnt=getAllEntries().filter(e=>e.user===user&&e.isPublic).length;
+      const card=document.createElement('div');
+      card.className='user-card';
+      card.style.animationDelay=i*0.07+'s';
+      card.innerHTML=`
+        <div class="user-avatar">${user.charAt(0).toUpperCase()}</div>
+        <div class="user-name">${user}</div>
+        <div class="user-stats">${cnt} public entries</div>
+        <button class="follow-btn ${f?'following':''}" onclick="toggleFollow('${user}')">
+          ${f?'✓ Following':'+ Follow'}
+        </button>`;
+      list.appendChild(card);
+    });
+  }
+
+  // ── RENDER FOLLOWING ──
+  function renderFollowing(){
+    const list=document.getElementById('following-list');
+    list.innerHTML='';
+    const following=getFollowing();
+    if(following.length===0){
+      list.innerHTML="<div class='empty-note'>You're not following anyone yet.<br>Go to Explore!</div>";
+      return;
+    }
+    let entries=getAllEntries().filter(e=>e.isPublic&&following.includes(e.user)).reverse();
+    if(entries.length===0){
+      list.innerHTML='<div class="empty-note">People you follow haven\'t posted publicly yet.</div>';
+      return;
+    }
+    entries.forEach((e,i)=>list.appendChild(buildPostCard(e,i*0.06)));
+  }
+
+  // ── TOAST ──
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+
+  // ── INIT ──
+  renderFeed();
+
+  // screen time
+  const pageStart=Date.now();
+  window.addEventListener('beforeunload',()=>{
+    const secs=Math.round((Date.now()-pageStart)/1000);
+    const key='zen_time_'+me;
+    const times=JSON.parse(localStorage.getItem(key)||'{}');
+    times['social']=(times['social']||0)+secs;
+    localStorage.setItem(key,JSON.stringify(times));
+  });
+</script>
+</body>
+</html>

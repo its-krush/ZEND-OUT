@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen'd Out</title>
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { overflow:hidden; font-family:'Poppins',sans-serif; }
+
+    .bgm {
+      background: linear-gradient(135deg, #9de8f6, #6060f4);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      perspective: 1000px;
+      position: relative;
+    }
+
+    .bubble {
+      position: absolute; background: rgba(255,255,255,0.2);
+      border-radius: 50%; pointer-events: none; z-index: 0;
+    }
+
+    .main-box {
+      background: #cce0ff;
+      width: 900px; height: 520px; border-radius: 50px;
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 0 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      position: relative; z-index: 1;
+      transition: transform 0.1s ease-out;
+    }
+
+    .animal-section {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+    }
+
+    .brand-title {
+      font-family: 'Righteous', cursive;
+      font-size: 5.5rem; color: #3f3db3;
+      margin: 0; line-height: 0.8;
+      transform: translateY(70px); z-index: 2;
+      text-shadow: 2px 2px 0px rgba(255,255,255,0.4);
+      cursor: pointer;
+      transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .animal { transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .brand-title:hover + .animal { transform: translateY(-25px) scale(1.08); }
+
+    .animal img {
+      width: 420px;
+      filter: drop-shadow(0 15px 25px rgba(0,0,0,0.15));
+      position: relative; z-index: 1;
+    }
+
+    /* LOGIN BOX */
+    .login-box {
+      background: #ffffff; width: 340px;
+      border-radius: 40px; padding: 28px 36px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column; justify-content: center;
+    }
+
+    /* Tab switcher */
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab {
+      flex: 1; padding: 10px; border: none; border-radius: 12px;
+      font-family: 'Poppins', sans-serif; font-weight: 700;
+      font-size: 0.82rem; cursor: pointer; transition: 0.3s;
+      background: #f0f4ff; color: #6060f4;
+    }
+    .tab.active { background: #6060f4; color: white; }
+
+    /* Forms */
+    .form-panel { display: none; flex-direction: column; gap: 0; }
+    .form-panel.active { display: flex; }
+
+    input {
+      width: 100%; padding: 12px 14px; margin: 5px 0;
+      border: 1px solid #e0e6ed; background: #f9fbff;
+      border-radius: 12px; outline: none;
+      font-family: 'Poppins', sans-serif; font-size: 0.9rem;
+      transition: 0.3s;
+    }
+    input:focus {
+      border-color: #6060f4; background: #fff;
+      box-shadow: 0 0 8px rgba(96,96,244,0.2);
+    }
+
+    .submit-btn {
+      width: 100%; padding: 13px; border: none; border-radius: 12px;
+      background: #6060f4; color: white;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      margin-top: 12px; transition: 0.3s;
+      font-family: 'Poppins', sans-serif;
+    }
+    .submit-btn:hover { background: #4b4bd3; transform: translateY(-2px); }
+
+    .flash-msg {
+      background: rgba(244,63,94,0.1); color: #f43f5e;
+      padding: 8px 12px; border-radius: 10px;
+      font-size: 0.78rem; font-weight: 600;
+      margin-bottom: 10px; text-align: center;
+      display: none;
+    }
+    .flash-msg.show { display: block; }
+    .flash-msg.success { background: rgba(16,185,129,0.1); color: #059669; }
+  </style>
+</head>
+<body>
+  <div class="bgm" id="parallax-scene">
+    <div class="bubble" style="width:100px;height:100px;top:10%;left:5%;" data-speed="2"></div>
+    <div class="bubble" style="width:150px;height:150px;bottom:15%;right:10%;" data-speed="-3"></div>
+    <div class="bubble" style="width:80px;height:80px;top:20%;right:25%;" data-speed="5"></div>
+
+    <div class="main-box" id="main-card">
+      <div class="animal-section">
+        <h1 class="brand-title">Zen'd Out</h1>
+        <div class="animal">
+          <img src="images/animals.png" alt="Zen Animals">
+        </div>
+      </div>
+
+      <div class="login-box">
+        <div id="flash" class="flash-msg"></div>
+
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('login')">Login</button>
+          <button class="tab"        onclick="switchTab('register')">Sign Up</button>
+        </div>
+
+        <!-- LOGIN -->
+        <div class="form-panel active" id="login-form">
+          <input type="text"     id="login-user" placeholder="Username">
+          <input type="password" id="login-pass" placeholder="Password">
+          <button class="submit-btn" onclick="doLogin()">Login</button>
+        </div>
+
+        <!-- REGISTER -->
+        <div class="form-panel" id="register-form">
+          <input type="text"     id="reg-user"    placeholder="Username">
+          <input type="password" id="reg-pass"    placeholder="Password">
+          <input type="password" id="reg-confirm" placeholder="Confirm Password">
+          <button class="submit-btn" onclick="doRegister()">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── check if already logged in ──
+    if(localStorage.getItem('zen_user')){
+      window.location.href = 'dashboard.html';
+    }
+
+    function switchTab(tab){
+      document.querySelectorAll('.tab').forEach((t,i)=>{
+        t.classList.toggle('active', (i===0)===(tab==='login'));
+      });
+      document.getElementById('login-form').classList.toggle('active', tab==='login');
+      document.getElementById('register-form').classList.toggle('active', tab==='register');
+      hideFlash();
+    }
+
+    function showFlash(msg, type='error'){
+      const el = document.getElementById('flash');
+      el.textContent = msg;
+      el.className = 'flash-msg show' + (type==='success' ? ' success' : '');
+    }
+    function hideFlash(){
+      document.getElementById('flash').className = 'flash-msg';
+    }
+
+    function doLogin(){
+      const username = document.getElementById('login-user').value.trim();
+      const password = document.getElementById('login-pass').value;
+
+      if(!username || !password){ showFlash('Please fill in all fields.'); return; }
+
+      // get stored users
+      const users = JSON.parse(localStorage.getItem('zen_users') || '{}');
+
+      if(!users[username]){ showFlash('Username not found.'); return; }
+      if(users[username] !== password){ showFlash('Wrong password.'); return; }
+
+      // save session
+      localStorage.setItem('zen_user', username);
+      window.location.href = 'dashboard.html';
+    }
+
+    function doRegister(){
+      const username = document.getElementById('reg-user').value.trim();
+      const password = document.getElementById('reg-pass').value;
+      const confirm  = document.getElementById('reg-confirm').value;
+
+      if(!username || !password || !confirm){ showFlash('Please fill in all fields.'); return; }
+      if(password !== confirm){ showFlash('Passwords do not match.'); return; }
+      if(password.length < 4){ showFlash('Password too short (min 4 chars).'); return; }
+
+      const users = JSON.parse(localStorage.getItem('zen_users') || '{}');
+      if(users[username]){ showFlash('Username already taken.'); return; }
+
+      users[username] = password;
+      localStorage.setItem('zen_users', JSON.stringify(users));
+      localStorage.setItem('zen_user', username);
+
+      showFlash('Account created! Redirecting...', 'success');
+      setTimeout(()=> window.location.href = 'dashboard.html', 1000);
+    }
+
+    // parallax
+    document.addEventListener("mousemove", (e) => {
+      const mouseX = e.clientX / window.innerWidth - 0.5;
+      const mouseY = e.clientY / window.innerHeight - 0.5;
+      const card = document.getElementById("main-card");
+      card.style.transform = `translateX(${mouseX*30}px) translateY(${mouseY*30}px) rotateY(${mouseX*5}deg) rotateX(${mouseY*-5}deg)`;
+      document.querySelectorAll(".bubble").forEach(b => {
+        const s = b.getAttribute("data-speed");
+        b.style.transform = `translate(${mouseX*s*50}px, ${mouseY*s*50}px)`;
+      });
+    });
+  </script>
+</body>
+</html>

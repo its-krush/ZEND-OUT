@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zen'd Out | Puzzles</title>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#9de8f6; --bg2:#6060f4; --card:#ffffff; --text:#0a0a3c;
+    --accent:#3f3db3; --soft:rgba(204,224,255,0.75); --glow:rgba(96,96,244,0.35);
+  }
+  [data-theme="dark"] {
+    --bg:#050510; --bg2:#1a1a40; --card:#121225; --text:#f0f4ff;
+    --accent:#00d2ff; --soft:rgba(10,10,40,0.85); --glow:rgba(0,210,255,0.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Nunito',sans-serif;background:radial-gradient(circle at 60% 40%,var(--bg2),var(--bg) 70%);min-height:100vh;color:var(--text);transition:background 0.5s,color 0.5s;}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:16px 40px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.25);position:sticky;top:0;z-index:100;}
+  .nav-brand{font-family:'Righteous',cursive;font-size:1.6rem;background:linear-gradient(to right,var(--text),var(--accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+  .nav-right{display:flex;align-items:center;gap:18px;}
+  .nav-right a{text-decoration:none;color:var(--text);font-weight:700;font-size:0.82rem;letter-spacing:1px;text-transform:uppercase;opacity:0.75;transition:opacity 0.2s;}
+  .nav-right a:hover{opacity:1;}
+  .logout-btn{background:rgba(244,63,94,0.15);color:#f43f5e;border:none;padding:7px 16px;border-radius:20px;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.78rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:0.2s;}
+  .logout-btn:hover{background:rgba(244,63,94,0.3);}
+  .switch{position:relative;display:inline-block;width:44px;height:22px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;cursor:pointer;inset:0;background:rgba(0,0,0,0.15);border-radius:34px;transition:.4s;}
+  .slider:before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.4s;}
+  input:checked+.slider{background:var(--accent);}
+  input:checked+.slider:before{transform:translateX(22px);}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  #screen-home{display:none;flex-direction:column;align-items:center;padding:50px 20px;}
+  #screen-home.active{display:flex;}
+  .page-title{font-family:'Righteous',cursive;font-size:2.8rem;background:linear-gradient(to right,var(--text),var(--accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+  .page-sub{font-size:0.9rem;letter-spacing:3px;text-transform:uppercase;opacity:0.6;margin-bottom:50px;}
+  .puzzle-grid{display:grid;grid-template-columns:repeat(2,300px);gap:24px;}
+  .puzzle-card{background:var(--card);border-radius:32px;padding:32px 28px;cursor:pointer;box-shadow:0 10px 40px rgba(0,0,0,0.1);display:flex;flex-direction:column;align-items:center;gap:14px;opacity:0;transform:translateY(30px);animation:popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275) forwards;transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.6),box-shadow 0.4s;position:relative;overflow:hidden;}
+  .puzzle-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);pointer-events:none;}
+  .puzzle-card:hover{transform:translateY(-12px) scale(1.03);box-shadow:0 30px 70px var(--glow);}
+  @keyframes popIn{to{opacity:1;transform:translateY(0);}}
+  .puzzle-card:nth-child(1){animation-delay:0.1s;}.puzzle-card:nth-child(2){animation-delay:0.2s;}.puzzle-card:nth-child(3){animation-delay:0.3s;}.puzzle-card:nth-child(4){animation-delay:0.4s;}
+  .puzzle-icon{font-size:3.5rem;line-height:1;}
+  .puzzle-name{font-family:'Righteous',cursive;font-size:1.3rem;color:var(--text);}
+  .puzzle-desc{font-size:0.82rem;opacity:0.6;text-align:center;line-height:1.5;}
+  .puzzle-hs{font-size:0.78rem;font-weight:900;letter-spacing:1px;color:var(--accent);text-transform:uppercase;}
+  .play-btn{background:var(--accent);color:white;border:none;padding:10px 28px;border-radius:20px;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:0.3s;margin-top:4px;}
+  .play-btn:hover{filter:brightness(1.15);transform:translateY(-2px);}
+  .game-screen{display:none;flex-direction:column;align-items:center;padding:30px 20px;min-height:calc(100vh - 60px);}
+  .game-screen.active{display:flex;}
+  .game-header{display:flex;align-items:center;gap:20px;margin-bottom:28px;width:100%;max-width:600px;}
+  .back-btn{background:var(--soft);border:none;color:var(--text);padding:10px 20px;border-radius:20px;font-family:'Nunito',sans-serif;font-weight:900;cursor:pointer;font-size:0.85rem;transition:0.3s;}
+  .back-btn:hover{transform:translateX(-3px);}
+  .game-title{font-family:'Righteous',cursive;font-size:1.8rem;color:var(--text);}
+  .score-box{margin-left:auto;background:var(--soft);padding:8px 20px;border-radius:20px;font-weight:900;font-size:0.9rem;color:var(--accent);}
+  .game-wrap{background:var(--card);border-radius:28px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.12);width:100%;max-width:600px;}
+
+  /* ARROW */
+  #arrow-sequence{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:52px;margin-bottom:20px;}
+  .arrow-arrow{width:48px;height:48px;border-radius:14px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:1.6rem;animation:flashIn 0.3s ease;}
+  @keyframes flashIn{from{opacity:0;transform:scale(0.7)}to{opacity:1;transform:scale(1)}}
+  .arrow-btns{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,64px);gap:8px;justify-content:center;margin:10px auto;}
+  .arrow-btn{width:64px;height:64px;border-radius:16px;border:none;font-size:1.6rem;cursor:pointer;background:var(--soft);color:var(--text);transition:0.15s;}
+  .arrow-btn:hover{background:var(--accent);color:white;transform:scale(1.08);}
+  .arrow-btn:active{transform:scale(0.94);}
+  .arrow-btn.empty{background:transparent;pointer-events:none;}
+  #arrow-status{text-align:center;font-weight:700;font-size:0.95rem;margin-top:14px;min-height:24px;color:var(--accent);}
+  .arrow-start-btn{display:block;margin:16px auto 0;background:var(--accent);color:white;border:none;padding:12px 36px;border-radius:20px;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.9rem;cursor:pointer;transition:0.3s;}
+  .arrow-start-btn:hover{filter:brightness(1.15);}
+
+  /* SUDOKU */
+  #sudoku-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;max-width:400px;margin:0 auto 18px;border:3px solid var(--accent);border-radius:10px;overflow:hidden;}
+  .s-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--card);font-size:1rem;font-weight:700;cursor:pointer;border:1px solid rgba(0,0,0,0.08);transition:background 0.2s;user-select:none;}
+  .s-cell.given{color:var(--accent);background:var(--soft);cursor:default;}
+  .s-cell.selected{background:rgba(96,96,244,0.2)!important;}
+  .s-cell.error{color:#f43f5e;}
+  .s-cell:nth-child(3n){border-right:2px solid var(--accent);}
+  .s-cell:nth-child(n+19):nth-child(-n+27),.s-cell:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid var(--accent);}
+  .sudoku-numpad{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+  .num-btn{width:40px;height:40px;border-radius:12px;border:none;background:var(--soft);color:var(--text);font-weight:900;font-size:1rem;cursor:pointer;transition:0.2s;}
+  .num-btn:hover{background:var(--accent);color:white;}
+  .sudoku-actions{display:flex;gap:10px;justify-content:center;}
+  .s-action-btn{padding:10px 22px;border-radius:18px;border:none;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.82rem;cursor:pointer;transition:0.3s;}
+  .s-new{background:var(--accent);color:white;}.s-clear{background:var(--soft);color:var(--text);}
+  .s-action-btn:hover{filter:brightness(1.1);transform:translateY(-2px);}
+
+  /* TTT */
+  #ttt-board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto 20px;}
+  .ttt-cell{aspect-ratio:1;border-radius:20px;background:var(--soft);border:none;font-size:2.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.2s;}
+  .ttt-cell:hover:not(.taken){background:rgba(96,96,244,0.15);transform:scale(1.05);}
+  .ttt-cell.taken{cursor:default;}.ttt-cell.win{background:rgba(16,185,129,0.25);}
+  #ttt-status{text-align:center;font-weight:900;font-size:1.1rem;color:var(--accent);margin-bottom:16px;min-height:28px;}
+  #ttt-reset{display:block;margin:0 auto;background:var(--accent);color:white;border:none;padding:12px 36px;border-radius:20px;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.9rem;cursor:pointer;transition:0.3s;}
+  #ttt-reset:hover{filter:brightness(1.15);}
+  .ttt-scores{display:flex;gap:20px;justify-content:center;margin-bottom:18px;}
+  .ttt-score-box{background:var(--soft);padding:10px 24px;border-radius:16px;text-align:center;}
+  .ttt-score-box .label{font-size:0.72rem;letter-spacing:1px;opacity:0.6;text-transform:uppercase;}
+  .ttt-score-box .val{font-family:'Righteous',cursive;font-size:1.4rem;color:var(--accent);}
+
+  /* WORDLE */
+  #wordle-grid{display:grid;grid-template-rows:repeat(6,1fr);gap:8px;max-width:320px;margin:0 auto 20px;}
+  .wordle-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .wordle-tile{aspect-ratio:1;border-radius:12px;border:2px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;font-family:'Righteous',cursive;font-size:1.5rem;text-transform:uppercase;background:var(--soft);color:var(--text);transition:transform 0.1s;}
+  .wordle-tile.correct{background:#10b981;color:white;border-color:#10b981;}
+  .wordle-tile.present{background:#f59e0b;color:white;border-color:#f59e0b;}
+  .wordle-tile.absent{background:#64748b;color:white;border-color:#64748b;}
+  .wordle-tile.active{border-color:var(--accent);transform:scale(1.05);}
+  .wordle-keyboard{display:flex;flex-direction:column;gap:8px;align-items:center;}
+  .wordle-kb-row{display:flex;gap:6px;}
+  .kb-key{min-width:36px;height:48px;padding:0 8px;border-radius:10px;border:none;background:var(--soft);color:var(--text);font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;transition:0.2s;}
+  .kb-key:hover{filter:brightness(0.9);}
+  .kb-key.correct{background:#10b981;color:white;}
+  .kb-key.present{background:#f59e0b;color:white;}
+  .kb-key.absent{background:#64748b;color:white;}
+  .kb-key.wide{min-width:56px;font-size:0.75rem;}
+  #wordle-msg{text-align:center;font-weight:900;font-size:1rem;color:var(--accent);margin-bottom:14px;min-height:24px;}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="dashboard.html">Zen'd Out</a>
+  <div class="nav-right">
+    <a href="dashboard.html">🏠 Home</a>
+    <a href="journal.html">Journal</a>
+    <a href="analytics.html">Analytics</a>
+    <a href="social.html">Social</a>
+    <span style="font-size:0.7rem;font-weight:900;opacity:0.5;">DARK</span>
+    <label class="switch"><input type="checkbox" id="theme-toggle" onchange="toggleTheme()"><span class="slider"></span></label>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <h1 class="page-title">🎮 Puzzle Zone</h1>
+  <p class="page-sub">Pick your challenge</p>
+  <div class="puzzle-grid">
+    <div class="puzzle-card" onclick="openGame('arrow')">
+      <div class="puzzle-icon">🧠</div><div class="puzzle-name">Arrow Memory</div>
+      <div class="puzzle-desc">Watch the sequence.<br>Repeat it back.</div>
+      <div class="puzzle-hs" id="hs-arrow">Best: —</div><button class="play-btn">Play</button>
+    </div>
+    <div class="puzzle-card" onclick="openGame('sudoku')">
+      <div class="puzzle-icon">🔢</div><div class="puzzle-name">Sudoku</div>
+      <div class="puzzle-desc">Randomly generated.<br>No two puzzles alike.</div>
+      <div class="puzzle-hs" id="hs-sudoku">Best: —</div><button class="play-btn">Play</button>
+    </div>
+    <div class="puzzle-card" onclick="openGame('ttt')">
+      <div class="puzzle-icon">❌</div><div class="puzzle-name">Tic Tac Toe</div>
+      <div class="puzzle-desc">You vs the computer.<br>Can you win?</div>
+      <div class="puzzle-hs" id="hs-ttt">Wins: —</div><button class="play-btn">Play</button>
+    </div>
+    <div class="puzzle-card" onclick="openGame('wordle')">
+      <div class="puzzle-icon">🟩</div><div class="puzzle-name">Wordle</div>
+      <div class="puzzle-desc">Guess the 5-letter word.<br>Never repeats until all played.</div>
+      <div class="puzzle-hs" id="hs-wordle">Streak: —</div><button class="play-btn">Play</button>
+    </div>
+  </div>
+</div>
+
+<!-- ARROW -->
+<div id="screen-arrow" class="game-screen screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <span class="game-title">🧠 Arrow Memory</span>
+    <div class="score-box">Level: <span id="arrow-level">0</span></div>
+  </div>
+  <div class="game-wrap">
+    <div id="arrow-sequence"></div>
+    <div class="arrow-btns">
+      <button class="arrow-btn empty"></button><button class="arrow-btn" onclick="arrowInput('↑')">↑</button><button class="arrow-btn empty"></button>
+      <button class="arrow-btn" onclick="arrowInput('←')">←</button><button class="arrow-btn" onclick="arrowInput('↓')">↓</button><button class="arrow-btn" onclick="arrowInput('→')">→</button>
+      <button class="arrow-btn empty"></button><button class="arrow-btn empty"></button><button class="arrow-btn empty"></button>
+    </div>
+    <div id="arrow-status">Press Start to play!</div>
+    <button class="arrow-start-btn" id="arrow-start-btn" onclick="startArrow()">Start Game</button>
+  </div>
+</div>
+
+<!-- SUDOKU -->
+<div id="screen-sudoku" class="game-screen screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <span class="game-title">🔢 Sudoku</span>
+    <div class="score-box">Time: <span id="sudoku-timer">0:00</span></div>
+  </div>
+  <div class="game-wrap">
+    <div id="sudoku-grid"></div>
+    <div class="sudoku-numpad" id="sudoku-numpad"></div>
+    <div class="sudoku-actions">
+      <button class="s-action-btn s-new" onclick="newSudoku()">New Puzzle</button>
+      <button class="s-action-btn s-clear" onclick="clearSudoku()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- TTT -->
+<div id="screen-ttt" class="game-screen screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <span class="game-title">❌ Tic Tac Toe</span>
+  </div>
+  <div class="game-wrap">
+    <div class="ttt-scores">
+      <div class="ttt-score-box"><div class="label">You (X)</div><div class="val" id="ttt-wins">0</div></div>
+      <div class="ttt-score-box"><div class="label">Draws</div><div class="val" id="ttt-draws">0</div></div>
+      <div class="ttt-score-box"><div class="label">CPU (O)</div><div class="val" id="ttt-losses">0</div></div>
+    </div>
+    <div id="ttt-status">Your turn! (X)</div>
+    <div id="ttt-board"></div>
+    <button id="ttt-reset" onclick="resetTTT()">New Game</button>
+  </div>
+</div>
+
+<!-- WORDLE -->
+<div id="screen-wordle" class="game-screen screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <span class="game-title">🟩 Wordle</span>
+    <div class="score-box">Streak: <span id="wordle-streak">0</span></div>
+  </div>
+  <div class="game-wrap">
+    <div id="wordle-msg"></div>
+    <div id="wordle-grid"></div>
+    <div class="wordle-keyboard" id="wordle-keyboard"></div>
+  </div>
+</div>
+
+<script>
+// THEME
+(function(){
+  const t=localStorage.getItem('zenTheme')||'light';
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('theme-toggle').checked=t==='dark';
+})();
+function toggleTheme(){
+  const dark=document.getElementById('theme-toggle').checked;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  localStorage.setItem('zenTheme',dark?'dark':'light');
+}
+function logout(){
+  localStorage.removeItem('zen_user');
+  window.location.href='index.html';
+}
+if(!localStorage.getItem('zen_user')) window.location.href='index.html';
+
+// NAV
+function openGame(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  if(name==='arrow') initArrow();
+  if(name==='sudoku') initSudoku();
+  if(name==='ttt') initTTT();
+  if(name==='wordle') initWordle();
+}
+function goHome(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-home').classList.add('active');
+  if(sudokuInterval) clearInterval(sudokuInterval);
+  loadHighScores();
+}
+
+// HIGH SCORES
+function loadHighScores(){
+  document.getElementById('hs-arrow').textContent='Best: '+(localStorage.getItem('hs_arrow')||'—');
+  document.getElementById('hs-ttt').textContent='Wins: '+(localStorage.getItem('hs_ttt')||'—');
+  document.getElementById('hs-wordle').textContent='Streak: '+(localStorage.getItem('hs_wordle')||'—');
+  const st=localStorage.getItem('hs_sudoku');
+  document.getElementById('hs-sudoku').textContent=st?'Best: '+Math.floor(st/60)+'m'+st%60+'s':'Best: —';
+}
+loadHighScores();
+
+// ══ ARROW MEMORY ══
+let arrowSeq=[],arrowIdx=0,arrowActive=false;
+const ARROWS=['↑','↓','←','→'];
+function initArrow(){
+  arrowSeq=[];arrowIdx=0;arrowActive=false;
+  document.getElementById('arrow-level').textContent='0';
+  document.getElementById('arrow-sequence').innerHTML='';
+  document.getElementById('arrow-status').textContent='Press Start to play!';
+  const btn=document.getElementById('arrow-start-btn');
+  btn.style.display='block';btn.textContent='Start Game';
+}
+function startArrow(){
+  document.getElementById('arrow-start-btn').style.display='none';
+  arrowSeq=[];nextArrowRound();
+}
+function nextArrowRound(){
+  arrowSeq.push(ARROWS[Math.floor(Math.random()*4)]);
+  document.getElementById('arrow-level').textContent=arrowSeq.length;
+  document.getElementById('arrow-status').textContent='Watch carefully...';
+  arrowActive=false;showArrowSeq(0);
+}
+function showArrowSeq(i){
+  const el=document.getElementById('arrow-sequence');
+  el.innerHTML='';
+  if(i<arrowSeq.length){
+    const d=document.createElement('div');
+    d.className='arrow-arrow';d.textContent=arrowSeq[i];el.appendChild(d);
+    setTimeout(()=>{el.innerHTML='';setTimeout(()=>showArrowSeq(i+1),300);},700);
+  } else {
+    document.getElementById('arrow-status').textContent='Your turn!';
+    arrowIdx=0;arrowActive=true;
+  }
+}
+function arrowInput(dir){
+  if(!arrowActive)return;
+  if(dir===arrowSeq[arrowIdx]){
+    arrowIdx++;
+    if(arrowIdx===arrowSeq.length){
+      arrowActive=false;
+      const prev=parseInt(localStorage.getItem('hs_arrow'))||0;
+      if(arrowSeq.length>prev)localStorage.setItem('hs_arrow',arrowSeq.length);
+      document.getElementById('arrow-status').textContent='✅ Correct! Get ready...';
+      setTimeout(nextArrowRound,1200);
+    }
+  } else {
+    arrowActive=false;
+    document.getElementById('arrow-status').textContent=`❌ Wrong! You reached level ${arrowSeq.length-1}`;
+    document.getElementById('arrow-sequence').innerHTML='';
+    const btn=document.getElementById('arrow-start-btn');
+    btn.style.display='block';btn.textContent='Play Again';
+  }
+}
+
+// ══ SUDOKU (random generator) ══
+let sudokuBoard=[],sudokuSolved=[],sudokuGiven=[],sudokuSelected=null;
+let sudokuInterval=null,sudokuSeconds=0;
+
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+function isValid(board,idx,num){
+  const row=Math.floor(idx/9),col=idx%9;
+  const boxR=Math.floor(row/3)*3,boxC=Math.floor(col/3)*3;
+  for(let i=0;i<9;i++){
+    if(board[row*9+i]===num)return false;
+    if(board[i*9+col]===num)return false;
+    if(board[(boxR+Math.floor(i/3))*9+(boxC+i%3)]===num)return false;
+  }
+  return true;
+}
+function solveSudoku(board,randomize=false){
+  const empty=board.indexOf(0);
+  if(empty===-1)return true;
+  const nums=randomize?shuffle([1,2,3,4,5,6,7,8,9]):[1,2,3,4,5,6,7,8,9];
+  for(const n of nums){
+    if(isValid(board,empty,n)){
+      board[empty]=n;
+      if(solveSudoku(board,false))return true;
+      board[empty]=0;
+    }
+  }
+  return false;
+}
+function generateSudoku(){
+  const board=Array(81).fill(0);
+  solveSudoku(board,true);
+  return board;
+}
+function makePuzzle(sol,count){
+  const board=[...sol];
+  const indices=shuffle([...Array(81).keys()]);
+  for(let i=0;i<count;i++)board[indices[i]]=0;
+  return board;
+}
+function initSudoku(){newSudoku();}
+function newSudoku(){
+  const sol=generateSudoku();
+  sudokuSolved=[...sol];
+  sudokuBoard=makePuzzle(sol,40);
+  sudokuGiven=sudokuBoard.map(v=>v!==0);
+  sudokuSelected=null;
+  renderSudoku();startSudokuTimer();
+}
+function startSudokuTimer(){
+  if(sudokuInterval)clearInterval(sudokuInterval);
+  sudokuSeconds=0;
+  sudokuInterval=setInterval(()=>{
+    sudokuSeconds++;
+    const m=Math.floor(sudokuSeconds/60),s=sudokuSeconds%60;
+    document.getElementById('sudoku-timer').textContent=m+':'+(s<10?'0':'')+s;
+  },1000);
+}
+function renderSudoku(){
+  const grid=document.getElementById('sudoku-grid');
+  grid.innerHTML='';
+  sudokuBoard.forEach((val,i)=>{
+    const cell=document.createElement('div');
+    cell.className='s-cell'+(sudokuGiven[i]?' given':'');
+    cell.textContent=val||'';
+    if(!sudokuGiven[i]){
+      cell.onclick=()=>{sudokuSelected=i;renderSudoku();};
+      if(sudokuSelected===i)cell.classList.add('selected');
+      if(val!==0&&val!==sudokuSolved[i])cell.classList.add('error');
+    }
+    grid.appendChild(cell);
+  });
+  const pad=document.getElementById('sudoku-numpad');
+  pad.innerHTML='';
+  for(let n=1;n<=9;n++){
+    const b=document.createElement('button');
+    b.className='num-btn';b.textContent=n;
+    b.onclick=()=>enterSudokuNum(n);pad.appendChild(b);
+  }
+  const clr=document.createElement('button');
+  clr.className='num-btn';clr.textContent='✕';
+  clr.onclick=()=>enterSudokuNum(0);pad.appendChild(clr);
+}
+function enterSudokuNum(n){
+  if(sudokuSelected===null||sudokuGiven[sudokuSelected])return;
+  sudokuBoard[sudokuSelected]=n;renderSudoku();checkSudokuWin();
+}
+function clearSudoku(){
+  sudokuBoard=sudokuBoard.map((v,i)=>sudokuGiven[i]?v:0);
+  sudokuSelected=null;renderSudoku();
+}
+function checkSudokuWin(){
+  if(JSON.stringify(sudokuBoard)===JSON.stringify(sudokuSolved)){
+    clearInterval(sudokuInterval);
+    const prev=parseInt(localStorage.getItem('hs_sudoku'))||99999;
+    if(sudokuSeconds<prev)localStorage.setItem('hs_sudoku',sudokuSeconds);
+    setTimeout(()=>alert(`🎉 Solved in ${Math.floor(sudokuSeconds/60)}m ${sudokuSeconds%60}s!`),100);
+  }
+}
+
+// ══ TIC TAC TOE ══
+let tttBoard=Array(9).fill(''),tttActive=true,tttW=0,tttD=0,tttL=0;
+const WIN_LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function initTTT(){
+  tttW=parseInt(localStorage.getItem('ttt_w'))||0;
+  tttD=parseInt(localStorage.getItem('ttt_d'))||0;
+  tttL=parseInt(localStorage.getItem('ttt_l'))||0;
+  updateTTTScores();resetTTT();
+}
+function updateTTTScores(){
+  document.getElementById('ttt-wins').textContent=tttW;
+  document.getElementById('ttt-draws').textContent=tttD;
+  document.getElementById('ttt-losses').textContent=tttL;
+}
+function resetTTT(){
+  tttBoard=Array(9).fill('');tttActive=true;
+  document.getElementById('ttt-status').textContent='Your turn! (X)';renderTTT();
+}
+function renderTTT(winLine=[]){
+  const board=document.getElementById('ttt-board');board.innerHTML='';
+  tttBoard.forEach((v,i)=>{
+    const cell=document.createElement('button');
+    cell.className='ttt-cell'+(v?' taken':'')+(winLine.includes(i)?' win':'');
+    cell.textContent=v;
+    if(!v&&tttActive)cell.onclick=()=>tttMove(i);
+    board.appendChild(cell);
+  });
+}
+function tttMove(i){
+  if(!tttActive||tttBoard[i])return;
+  tttBoard[i]='X';
+  const w=checkTTT();if(w){endTTT(w,'X');return;}
+  if(tttBoard.every(v=>v)){endTTT([],'draw');return;}
+  document.getElementById('ttt-status').textContent='CPU thinking...';renderTTT();
+  setTimeout(()=>{
+    cpuMove();
+    const w2=checkTTT();if(w2){endTTT(w2,'O');return;}
+    if(tttBoard.every(v=>v)){endTTT([],'draw');return;}
+    document.getElementById('ttt-status').textContent='Your turn! (X)';renderTTT();
+  },500);
+}
+function cpuMove(){
+  for(const line of WIN_LINES){
+    const vals=line.map(i=>tttBoard[i]);
+    if(vals.filter(v=>v==='O').length===2&&vals.includes('')){
+      tttBoard[line[vals.indexOf('')]]=  'O';return;
+    }
+  }
+  for(const line of WIN_LINES){
+    const vals=line.map(i=>tttBoard[i]);
+    if(vals.filter(v=>v==='X').length===2&&vals.includes('')){
+      tttBoard[line[vals.indexOf('')]]=  'O';return;
+    }
+  }
+  if(!tttBoard[4]){tttBoard[4]='O';return;}
+  const e=tttBoard.map((v,i)=>v?-1:i).filter(i=>i>=0);
+  tttBoard[e[Math.floor(Math.random()*e.length)]]='O';
+}
+function checkTTT(){
+  for(const line of WIN_LINES){
+    const[a,b,c]=line;
+    if(tttBoard[a]&&tttBoard[a]===tttBoard[b]&&tttBoard[b]===tttBoard[c])return line;
+  }return null;
+}
+function endTTT(line,result){
+  tttActive=false;renderTTT(line||[]);
+  if(result==='X'){tttW++;localStorage.setItem('hs_ttt',tttW);document.getElementById('ttt-status').textContent='🎉 You Win!';}
+  else if(result==='O'){tttL++;document.getElementById('ttt-status').textContent='😔 CPU Wins!';}
+  else{tttD++;document.getElementById('ttt-status').textContent="🤝 It's a Draw!";}
+  localStorage.setItem('ttt_w',tttW);localStorage.setItem('ttt_d',tttD);localStorage.setItem('ttt_l',tttL);
+  updateTTTScores();
+}
+
+// ══ WORDLE (no repeats until all 70 words used) ══
+const WORD_BANK=['CRANE','SLATE','TRACE','ADORE','BLAZE','CHARM','DREAM','EARTH','FLAIR','GRACE','HAVEN','IDEAL','KARMA','LIGHT','MUSIC','NIGHT','OCEAN','PEACE','QUIET','RIVER','SHINE','THINK','UNITE','VIVID','WATCH','YIELD','ZESTY','ANGEL','BLOOM','CLOUD','DANCE','EAGLE','FAITH','GLOOM','HEART','IVORY','JEWEL','KNEEL','LUNAR','MAPLE','NOBLE','OLIVE','PRIZE','QUEEN','RAINY','SUGAR','TEMPO','ULTRA','VAPOR','WEAVE','PIXEL','YOUNG','ZEBRA','AMBER','BRISK','CRISP','DUSTY','EMBER','FROST','GIANT','HONEY','INLET','KNACK','LEMON','MAGIC','NERVE','OUTER','PLUCK','SCOUT','TIGER','UPPER','VALID','WITCH'].filter(w=>w.length===5);
+
+let wordleWord='',wordleGuesses=[],wordleCurrent='',wordleOver=false,wordleStreak=0;
+
+function getNextWord(){
+  let used=JSON.parse(localStorage.getItem('wordle_used')||'[]');
+  const remaining=WORD_BANK.filter(w=>!used.includes(w));
+  if(remaining.length===0){used=[];localStorage.setItem('wordle_used','[]');}
+  const pool=remaining.length>0?remaining:WORD_BANK;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function initWordle(){
+  wordleStreak=parseInt(localStorage.getItem('wordle_streak'))||0;
+  document.getElementById('wordle-streak').textContent=wordleStreak;
+  startWordle();
+}
+function startWordle(){
+  wordleWord=getNextWord();wordleGuesses=[];wordleCurrent='';wordleOver=false;
+  document.getElementById('wordle-msg').textContent='';
+  document.getElementById('wordle-streak').textContent=wordleStreak;
+  renderWordleGrid();renderWordleKeyboard();
+}
+function renderWordleGrid(){
+  const grid=document.getElementById('wordle-grid');grid.innerHTML='';
+  for(let r=0;r<6;r++){
+    const row=document.createElement('div');row.className='wordle-row';
+    for(let c=0;c<5;c++){
+      const tile=document.createElement('div');tile.className='wordle-tile';
+      if(r<wordleGuesses.length){
+        const g=wordleGuesses[r];tile.textContent=g.word[c];tile.classList.add(g.result[c]);
+      } else if(r===wordleGuesses.length&&!wordleOver){
+        tile.textContent=wordleCurrent[c]||'';
+        if(wordleCurrent[c])tile.classList.add('active');
+      }
+      row.appendChild(tile);
+    }
+    grid.appendChild(row);
+  }
+}
+function renderWordleKeyboard(){
+  const kb=document.getElementById('wordle-keyboard');kb.innerHTML='';
+  const rows=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','⌫']];
+  const state={};
+  wordleGuesses.forEach(g=>{
+    g.word.split('').forEach((ch,i)=>{
+      const s=g.result[i];
+      if(!state[ch]||state[ch]==='absent')state[ch]=s;
+      if(s==='correct')state[ch]='correct';
+    });
+  });
+  rows.forEach(row=>{
+    const rowEl=document.createElement('div');rowEl.className='wordle-kb-row';
+    row.forEach(key=>{
+      const btn=document.createElement('button');
+      btn.className='kb-key'+(key.length>1?' wide':'');
+      btn.textContent=key;
+      if(state[key])btn.classList.add(state[key]);
+      btn.onclick=()=>wordleKey(key);
+      rowEl.appendChild(btn);
+    });
+    kb.appendChild(rowEl);
+  });
+}
+function wordleKey(key){
+  if(wordleOver)return;
+  if(key==='⌫'||key==='BACKSPACE'){wordleCurrent=wordleCurrent.slice(0,-1);}
+  else if(key==='ENTER'){wordleSubmit();return;}
+  else if(wordleCurrent.length<5&&/^[A-Z]$/.test(key)){wordleCurrent+=key;}
+  renderWordleGrid();
+}
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('screen-wordle').classList.contains('active')){
+    const k=e.key.toUpperCase();
+    if(k==='BACKSPACE')wordleKey('⌫');
+    else if(k==='ENTER')wordleKey('ENTER');
+    else if(/^[A-Z]$/.test(k)&&e.key.length===1)wordleKey(k);
+  }
+});
+function wordleSubmit(){
+  if(wordleCurrent.length!==5){document.getElementById('wordle-msg').textContent='Need 5 letters!';return;}
+  const result=scoreGuess(wordleCurrent,wordleWord);
+  wordleGuesses.push({word:wordleCurrent,result});
+  // mark word used
+  const used=JSON.parse(localStorage.getItem('wordle_used')||'[]');
+  if(!used.includes(wordleWord)){used.push(wordleWord);localStorage.setItem('wordle_used',JSON.stringify(used));}
+  wordleCurrent='';
+  renderWordleGrid();renderWordleKeyboard();
+  if(result.every(r=>r==='correct')){
+    wordleOver=true;wordleStreak++;
+    localStorage.setItem('wordle_streak',wordleStreak);
+    const best=parseInt(localStorage.getItem('hs_wordle'))||0;
+    if(wordleStreak>best)localStorage.setItem('hs_wordle',wordleStreak);
+    document.getElementById('wordle-streak').textContent=wordleStreak;
+    document.getElementById('wordle-msg').textContent=`🎉 Correct! The word was ${wordleWord}`;
+    setTimeout(()=>{if(confirm('Play next word?'))startWordle();},800);
+  } else if(wordleGuesses.length===6){
+    wordleOver=true;wordleStreak=0;localStorage.setItem('wordle_streak',0);
+    document.getElementById('wordle-msg').textContent=`❌ The word was ${wordleWord}`;
+    setTimeout(()=>{if(confirm('Try another word?'))startWordle();},800);
+  }
+}
+function scoreGuess(guess,answer){
+  const result=Array(5).fill('absent');
+  const aArr=answer.split(''),gArr=guess.split('');
+  const used=Array(5).fill(false);
+  gArr.forEach((ch,i)=>{if(ch===aArr[i]){result[i]='correct';used[i]=true;}});
+  gArr.forEach((ch,i)=>{
+    if(result[i]==='correct')return;
+    const j=aArr.findIndex((a,k)=>a===ch&&!used[k]);
+    if(j!==-1){result[i]='present';used[j]=true;}
+  });
+  return result;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen'd Out | Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #9de8f6;
+      --bg-accent: #6060f4;
+      --container-bg: rgba(204,224,255,0.7);
+      --brand-primary: #0a0a3c;
+      --brand-secondary: #3f3db3;
+      --card-bg: #ffffff;
+      --accent-glow: rgba(255,20,147,0.6);
+      --label-color: #3f3db3;
+      --text: #0a0a3c;
+    }
+    [data-theme="dark"] {
+      --bg-base: #050510;
+      --bg-accent: #1a1a40;
+      --container-bg: rgba(10,10,25,0.85);
+      --brand-primary: #ffffff;
+      --brand-secondary: #00d2ff;
+      --card-bg: #121225;
+      --accent-glow: rgba(0,210,255,0.6);
+      --label-color: #00d2ff;
+      --text: #f0f4ff;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body, html {
+      height: 100vh; width: 100%; overflow: hidden;
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg-base);
+      transition: background-color 0.4s;
+    }
+
+    #gradient-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(circle at var(--mx,50%) var(--my,50%), var(--bg-accent) 0%, var(--bg-base) 100%);
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 40px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .nav-brand {
+      font-family: 'Righteous', cursive; font-size: 1.5rem;
+      background: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; text-decoration: none;
+    }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-right a {
+      text-decoration: none; color: var(--text); font-weight: 700;
+      font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase;
+      opacity: 0.75; transition: opacity 0.2s;
+    }
+    .nav-right a:hover { opacity: 1; }
+    .nav-user {
+      font-size: 0.78rem; font-weight: 900;
+      color: var(--brand-secondary); letter-spacing: 1px;
+    }
+
+    /* dark mode toggle */
+    .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: rgba(0,0,0,0.15); border-radius: 34px; transition: .4s;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px;
+      left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .4s;
+    }
+    input:checked + .slider { background: var(--label-color); }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    /* MAIN LAYOUT */
+    .page {
+      height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      position: relative; z-index: 1; padding-top: 60px;
+    }
+
+    .greeting {
+      font-family: 'Righteous', cursive; font-size: 1.8rem;
+      background: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
+    }
+
+    .main-box {
+      background: var(--container-bg);
+      width: 960px; height: 500px; border-radius: 60px;
+      display: flex; justify-content: center; align-items: center; gap: 20px;
+      padding: 0 30px;
+      backdrop-filter: blur(30px);
+      border: 1.5px solid rgba(255,255,255,0.4);
+      box-shadow: 0 30px 100px rgba(0,0,0,0.15);
+    }
+
+    .dash-card {
+      background: var(--card-bg);
+      border-radius: 40px; width: 210px; height: 420px;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      padding: 30px 10px; cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      opacity: 0; transform: translateY(40px);
+      animation: bounceIn 0.8s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+      transition: all 0.5s cubic-bezier(0.175,0.885,0.32,1.6);
+      text-decoration: none;
+    }
+    @keyframes bounceIn { to { opacity:1; transform:translateY(0); } }
+
+    .dash-card:hover {
+      transform: translateY(-75px) scale(1.08);
+      box-shadow: 0 50px 100px var(--accent-glow);
+      z-index: 50;
+    }
+    .dash-card img {
+      width: 95%; max-height: 240px; object-fit: contain;
+      filter: drop-shadow(0 15px 25px rgba(0,0,0,0.1));
+      transition: transform 0.4s ease;
+    }
+    .dash-card:hover img { transform: scale(1.1) rotate(2deg); }
+
+    .label {
+      background: var(--label-color); color: white;
+      width: 85%; padding: 12px 0; border-radius: 18px;
+      text-align: center; font-weight: 700; font-size: 0.9rem;
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+  </style>
+
+  <script>
+    // apply theme before render — no flicker
+    (function(){
+      const t = localStorage.getItem('zenTheme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body>
+
+<div id="gradient-bg"></div>
+
+<nav>
+  <a class="nav-brand" href="dashboard.html">Zen'd Out</a>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-username"></span>
+    <a href="journal.html">Journal</a>
+    <a href="puzzles.html">Puzzles</a>
+    <a href="analytics.html">Analytics</a>
+    <a href="social.html">Social</a>
+    <span style="font-size:0.65rem;font-weight:900;color:var(--text);opacity:0.5;">DARK</span>
+    <label class="switch">
+      <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+      <span class="slider"></span>
+    </label>
+    <a href="#" onclick="logout()" style="opacity:0.5;">Logout</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="greeting" id="greeting">Hey there 👋</div>
+
+  <div class="main-box">
+    <a href="journal.html"   class="dash-card" style="animation-delay:0.1s;">
+      <img src="images/bunny_solo.png" alt="Journal">
+      <div class="label">Journal</div>
+    </a>
+    <a href="puzzles.html"   class="dash-card" style="animation-delay:0.2s;">
+      <img src="images/peng_solo.png" alt="Puzzles">
+      <div class="label">Puzzles</div>
+    </a>
+    <a href="analytics.html" class="dash-card" style="animation-delay:0.3s;">
+      <img src="images/fox_solo.png" alt="Analytics">
+      <div class="label">Analytics</div>
+    </a>
+    <a href="social.html"    class="dash-card" style="animation-delay:0.4s;">
+      <img src="images/cat_solo.png" alt="Social">
+      <div class="label">Social</div>
+    </a>
+  </div>
+</div>
+
+<script>
+  // ── auth guard ──
+  const user = localStorage.getItem('zen_user');
+  if(!user) window.location.href = 'index.html';
+  document.getElementById('nav-username').textContent = user ? '👤 ' + user : '';
+  document.getElementById('greeting').textContent = `Hey, ${user}! 👋`;
+
+  // ── dark mode ──
+  const toggle = document.getElementById('theme-toggle');
+  toggle.checked = localStorage.getItem('zenTheme') === 'dark';
+
+  function toggleTheme(){
+    const dark = toggle.checked;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    localStorage.setItem('zenTheme', dark ? 'dark' : 'light');
+  }
+
+  // ── logout ──
+  function logout(){
+    localStorage.removeItem('zen_user');
+    window.location.href = 'index.html';
+  }
+
+  // ── mouse gradient ──
+  const bg = document.getElementById('gradient-bg');
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth) * 100;
+    const y = (e.clientY / window.innerHeight) * 100;
+    bg.style.setProperty('--mx', x + '%');
+    bg.style.setProperty('--my', y + '%');
+  });
+</script>
+</body>
+</html>

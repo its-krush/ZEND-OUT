@@ -8,7 +8,431 @@
   <style>
     :root {
       --bg: #9de8f6; --bg2: #6060f4;
+      --card: #ffffff; --text: #0a0a3c;<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen'd Out | Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #9de8f6; --bg2: #6060f4;
       --card: #ffffff; --text: #0a0a3c;
+      --accent: #3f3db3; --soft: rgba(204,224,255,0.75);
+      --glow: rgba(96,96,244,0.3);
+    }
+    [data-theme="dark"] {
+      --bg: #050510; --bg2: #1a1a40;
+      --card: #121225; --text: #f0f4ff;
+      --accent: #00d2ff; --soft: rgba(10,10,40,0.85);
+      --glow: rgba(0,210,255,0.3);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Poppins',sans-serif;
+      background: radial-gradient(circle at 60% 30%, var(--bg2), var(--bg) 70%);
+      min-height:100vh; color:var(--text);
+      transition: background 0.5s, color 0.5s;
+    }
+
+    /* NAV */
+    nav {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 40px;
+      background:rgba(255,255,255,0.15);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,255,255,0.25);
+      position:sticky; top:0; z-index:100;
+    }
+    .nav-brand {
+      font-family:'Righteous',cursive; font-size:1.5rem;
+      background:linear-gradient(to right,var(--text),var(--accent));
+      -webkit-background-clip:text; background-clip:text;
+      -webkit-text-fill-color:transparent; text-decoration:none;
+    }
+    .nav-right { display:flex; align-items:center; gap:16px; }
+    .nav-right a {
+      text-decoration:none; color:var(--text); font-weight:700;
+      font-size:0.78rem; letter-spacing:1px; text-transform:uppercase;
+      opacity:0.75; transition:opacity 0.2s;
+    }
+    .nav-right a:hover { opacity:1; }
+    .logout-btn{background:rgba(244,63,94,0.15);color:#f43f5e;border:none;padding:7px 16px;border-radius:20px;font-family:'Poppins',sans-serif;font-weight:900;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:0.2s;}
+    .logout-btn:hover{background:rgba(244,63,94,0.3);}
+    .switch { position:relative; display:inline-block; width:44px; height:22px; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider {
+      position:absolute; cursor:pointer; inset:0;
+      background:rgba(0,0,0,0.15); border-radius:34px; transition:.4s;
+    }
+    .slider:before {
+      content:""; position:absolute; height:16px; width:16px;
+      left:3px; bottom:3px; background:white; border-radius:50%; transition:.4s;
+    }
+    input:checked + .slider { background:var(--accent); }
+    input:checked + .slider:before { transform:translateX(22px); }
+
+    /* PAGE */
+    .page { max-width:1000px; margin:0 auto; padding:40px 20px; }
+
+    .page-title {
+      font-family:'Righteous',cursive; font-size:2.5rem;
+      background:linear-gradient(to right,var(--text),var(--accent));
+      -webkit-background-clip:text; background-clip:text;
+      -webkit-text-fill-color:transparent;
+      margin-bottom:6px;
+    }
+    .page-sub {
+      font-size:0.85rem; letter-spacing:3px; text-transform:uppercase;
+      opacity:0.5; margin-bottom:36px;
+    }
+
+    /* GRID */
+    .analytics-grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap:20px;
+    }
+
+    .a-card {
+      background:var(--card);
+      border-radius:28px; padding:28px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.08);
+      opacity:0; transform:translateY(20px);
+      animation:slideUp 0.6s ease forwards;
+    }
+    @keyframes slideUp { to { opacity:1; transform:translateY(0); } }
+    .a-card:nth-child(1){animation-delay:0.1s;}
+    .a-card:nth-child(2){animation-delay:0.2s;}
+    .a-card:nth-child(3){animation-delay:0.3s;}
+    .a-card:nth-child(4){animation-delay:0.4s; grid-column:1/-1;}
+
+    .a-card-title {
+      font-family:'Righteous',cursive; font-size:1.1rem;
+      color:var(--accent); letter-spacing:1px; text-transform:uppercase;
+      margin-bottom:20px; display:flex; align-items:center; gap:8px;
+    }
+
+    /* PUZZLE SCORES */
+    .score-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 0; border-bottom:1px solid rgba(0,0,0,0.06);
+    }
+    .score-row:last-child { border-bottom:none; }
+    .score-game { display:flex; align-items:center; gap:10px; font-weight:600; }
+    .score-icon { font-size:1.4rem; }
+    .score-val {
+      font-family:'Righteous',cursive; font-size:1.3rem; color:var(--accent);
+    }
+    .score-bar-wrap {
+      width:100%; height:6px; background:var(--soft);
+      border-radius:3px; margin-top:6px; overflow:hidden;
+    }
+    .score-bar {
+      height:100%; background:var(--accent); border-radius:3px;
+      transition:width 1s ease;
+    }
+
+    /* SCREEN TIME */
+    .time-row {
+      display:flex; align-items:center; gap:14px;
+      padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06);
+    }
+    .time-row:last-child { border-bottom:none; }
+    .time-page { font-weight:600; font-size:0.9rem; min-width:90px; text-transform:capitalize; }
+    .time-bar-wrap { flex:1; height:10px; background:var(--soft); border-radius:5px; overflow:hidden; }
+    .time-bar { height:100%; border-radius:5px; transition:width 1.2s ease; }
+    .time-val { font-weight:900; font-size:0.85rem; color:var(--accent); min-width:50px; text-align:right; }
+
+    /* JOURNAL STATS */
+    .journal-stats {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px;
+    }
+    .j-stat {
+      background:var(--soft); border-radius:18px; padding:16px;
+      text-align:center;
+    }
+    .j-stat-val { font-family:'Righteous',cursive; font-size:1.8rem; color:var(--accent); }
+    .j-stat-label { font-size:0.72rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; opacity:0.6; margin-top:4px; }
+
+    .best-entry {
+      background:var(--soft); border-radius:18px; padding:18px;
+    }
+    .best-entry-title { font-weight:700; font-size:1rem; margin-bottom:6px; }
+    .best-entry-preview {
+      font-size:0.82rem; opacity:0.65;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .best-entry-label {
+      font-size:0.7rem; font-weight:900; letter-spacing:1px;
+      text-transform:uppercase; color:var(--accent); margin-bottom:8px;
+    }
+
+    /* WORDLE STREAK */
+    .streak-display {
+      display:flex; align-items:center; justify-content:center;
+      gap:20px; padding:10px 0;
+    }
+    .streak-big {
+      font-family:'Righteous',cursive; font-size:4rem; color:var(--accent);
+      line-height:1;
+    }
+    .streak-info { display:flex; flex-direction:column; }
+    .streak-info span:first-child { font-weight:900; font-size:1rem; }
+    .streak-info span:last-child  { font-size:0.8rem; opacity:0.6; }
+
+    .empty-note {
+      opacity:0.45; font-size:0.85rem; text-align:center; padding:20px 0;
+    }
+  
+    .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;}
+    .hamburger span{display:block;width:24px;height:2px;background:var(--text);border-radius:2px;}
+    .drawer{display:none;position:fixed;top:0;right:0;bottom:0;width:260px;background:var(--card);backdrop-filter:blur(20px);z-index:300;flex-direction:column;padding:60px 28px 28px;gap:6px;box-shadow:-10px 0 40px rgba(0,0,0,0.2);transform:translateX(100%);transition:transform 0.35s ease;overflow-y:auto;}
+    .drawer.open{transform:translateX(0);}
+    .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:299;}
+    .drawer-overlay.open{display:block;}
+    .drawer a,.drawer button.d-btn{text-decoration:none;color:var(--text);font-weight:700;font-size:1rem;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.06);display:block;background:none;border-left:none;border-right:none;border-top:none;text-align:left;cursor:pointer;font-family:'Poppins',sans-serif;}
+    .drawer-close{position:absolute;top:16px;right:20px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text);}
+    .drawer-dark{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(0,0,0,0.06);}
+    .drawer-dark span{font-weight:700;font-size:0.9rem;}
+    @media(max-width:768px){
+      .nav-right{display:none;} .hamburger{display:flex;} .drawer{display:flex;}
+      nav{padding:14px 20px;} .page{padding:20px 14px;}
+      .analytics-grid{grid-template-columns:1fr !important;}
+      .a-card:nth-child(4){grid-column:1 !important;}
+      .journal-stats{grid-template-columns:1fr 1fr;}
+      .streak-display{flex-direction:column;text-align:center;gap:12px;}
+    }
+  </style>
+  <script>
+    (function(){
+      const t=localStorage.getItem('zenTheme')||'light';
+      document.documentElement.setAttribute('data-theme',t);
+    })();
+  </script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="dashboard.html">Zen'd Out</a>
+  <div class="nav-right">
+    <a href="dashboard.html">🏠 Home</a>
+    <a href="journal.html">Journal</a>
+    <a href="puzzles.html">Puzzles</a>
+    <a href="social.html">Social</a>
+    <span style="font-size:0.65rem;font-weight:900;opacity:0.5;">DARK</span>
+    <label class="switch">
+      <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+      <span class="slider"></span>
+    </label>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+  <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <button class="drawer-close" onclick="closeDrawer()">&#x2715;</button>
+  <a href="dashboard.html">&#x1F3E0; Home</a>
+  <a href="journal.html">&#x1F4D4; Journal</a>
+  <a href="puzzles.html">&#x1F3AE; Puzzles</a>
+  <a href="analytics.html">&#x1F4CA; Analytics</a>
+  <a href="social.html">&#x1F30D; Social</a>
+  <div class="drawer-dark">
+    <span>&#x1F319; Dark Mode</span>
+    <label class="switch"><input type="checkbox" id="theme-toggle-drawer" onchange="toggleTheme()"><span class="slider"></span></label>
+  </div>
+  <button class="d-btn" onclick="logout()" style="color:#f43f5e;">Logout</button>
+</div>
+
+<div class="page">
+  <h1 class="page-title">📊 Analytics</h1>
+  <p class="page-sub">Your zen journey in numbers</p>
+
+  <div class="analytics-grid">
+
+    <!-- PUZZLE HIGH SCORES -->
+    <div class="a-card">
+      <div class="a-card-title">🎮 Puzzle High Scores</div>
+
+      <div class="score-row">
+        <div class="score-game"><span class="score-icon">🧠</span> Arrow Memory</div>
+        <div class="score-val" id="sc-arrow">—</div>
+      </div>
+      <div class="score-row">
+        <div class="score-game"><span class="score-icon">🔢</span> Sudoku (Best Time)</div>
+        <div class="score-val" id="sc-sudoku">—</div>
+      </div>
+      <div class="score-row">
+        <div class="score-game"><span class="score-icon">❌</span> Tic Tac Toe Wins</div>
+        <div class="score-val" id="sc-ttt">—</div>
+      </div>
+      <div class="score-row">
+        <div class="score-game"><span class="score-icon">🟩</span> Wordle Streak</div>
+        <div class="score-val" id="sc-wordle">—</div>
+      </div>
+    </div>
+
+    <!-- SCREEN TIME -->
+    <div class="a-card">
+      <div class="a-card-title">⏱ Screen Time</div>
+      <div id="screen-time-list"><div class="empty-note">Play some games or write entries first!</div></div>
+    </div>
+
+    <!-- JOURNAL STATS -->
+    <div class="a-card">
+      <div class="a-card-title">📔 Journal Stats</div>
+      <div class="journal-stats">
+        <div class="j-stat">
+          <div class="j-stat-val" id="j-total">0</div>
+          <div class="j-stat-label">Total Entries</div>
+        </div>
+        <div class="j-stat">
+          <div class="j-stat-val" id="j-public">0</div>
+          <div class="j-stat-label">Public</div>
+        </div>
+        <div class="j-stat">
+          <div class="j-stat-val" id="j-private">0</div>
+          <div class="j-stat-label">Private</div>
+        </div>
+      </div>
+      <div id="best-entry-wrap"></div>
+    </div>
+
+    <!-- WORDLE PROGRESS (full width) -->
+    <div class="a-card">
+      <div class="a-card-title">🟩 Wordle Progress</div>
+      <div class="streak-display">
+        <div class="streak-big" id="wordle-streak-big">0</div>
+        <div class="streak-info">
+          <span>Current Streak</span>
+          <span id="wordle-words-played">— words played so far</span>
+        </div>
+        <div style="margin-left:40px;">
+          <div class="j-stat">
+            <div class="j-stat-val" id="wordle-best">—</div>
+            <div class="j-stat-label">Best Streak</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+  function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');}
+  function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');}
+  // auth guard
+  const currentUser = localStorage.getItem('zen_user');
+  if(!currentUser) window.location.href = 'index.html';
+
+  // theme
+  document.getElementById('theme-toggle').checked = localStorage.getItem('zenTheme') === 'dark';
+  function toggleTheme(){
+    const dark = document.getElementById('theme-toggle').checked;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    localStorage.setItem('zenTheme', dark ? 'dark' : 'light');
+  }
+  function logout(){ localStorage.removeItem('zen_user'); window.location.href='index.html'; }
+
+  // ── PUZZLE SCORES ──
+  const arrow  = localStorage.getItem('hs_arrow');
+  const sudoku = localStorage.getItem('hs_sudoku');
+  const ttt    = localStorage.getItem('hs_ttt');
+  const wordle = localStorage.getItem('hs_wordle');
+
+  document.getElementById('sc-arrow').textContent  = arrow  ? 'Level ' + arrow  : '—';
+  document.getElementById('sc-sudoku').textContent = sudoku ? Math.floor(sudoku/60)+'m '+sudoku%60+'s' : '—';
+  document.getElementById('sc-ttt').textContent    = ttt    ? ttt + ' wins'      : '—';
+  document.getElementById('sc-wordle').textContent = wordle ? wordle             : '—';
+
+  // ── SCREEN TIME ──
+  // track time on this page, add to running total
+  const pageStart = Date.now();
+  const pageName  = 'analytics';
+
+  function logTime(){
+    const secs = Math.round((Date.now() - pageStart) / 1000);
+    const key  = 'zen_time_' + currentUser;
+    const times = JSON.parse(localStorage.getItem(key) || '{}');
+    times[pageName] = (times[pageName] || 0) + secs;
+    localStorage.setItem(key, JSON.stringify(times));
+  }
+  window.addEventListener('beforeunload', logTime);
+
+  // render screen time
+  const timeKey  = 'zen_time_' + currentUser;
+  const allTimes = JSON.parse(localStorage.getItem(timeKey) || '{}');
+  const timeList = document.getElementById('screen-time-list');
+  const pages    = ['journal','puzzles','analytics','social','dashboard'];
+  const colors   = ['#a855f7','#6060f4','#14b8a6','#f59e0b','#f43f5e'];
+  const maxTime  = Math.max(...pages.map(p => allTimes[p]||0), 1);
+
+  const hasTime  = pages.some(p => allTimes[p]);
+  if(!hasTime){
+    timeList.innerHTML = '<div class="empty-note">No screen time data yet.</div>';
+  } else {
+    timeList.innerHTML = pages.map((p,i) => {
+      const secs  = allTimes[p] || 0;
+      const label = secs >= 60 ? Math.floor(secs/60)+'m '+secs%60+'s' : secs+'s';
+      const pct   = Math.round((secs/maxTime)*100);
+      return `
+        <div class="time-row">
+          <div class="time-page">${p}</div>
+          <div class="time-bar-wrap">
+            <div class="time-bar" style="width:0%;background:${colors[i]};" data-pct="${pct}"></div>
+          </div>
+          <div class="time-val">${secs>0?label:'—'}</div>
+        </div>`;
+    }).join('');
+    // animate bars after render
+    setTimeout(()=>{
+      document.querySelectorAll('.time-bar').forEach(b=>{
+        b.style.width = b.getAttribute('data-pct') + '%';
+      });
+    }, 100);
+  }
+
+  // ── JOURNAL STATS ──
+  const entries = JSON.parse(localStorage.getItem('zen_entries')||'[]')
+                    .filter(e => e.user === currentUser);
+  const pubEntries  = entries.filter(e => e.isPublic);
+  const privEntries = entries.filter(e => !e.isPublic);
+
+  document.getElementById('j-total').textContent   = entries.length;
+  document.getElementById('j-public').textContent  = pubEntries.length;
+  document.getElementById('j-private').textContent = privEntries.length;
+
+  // best entry = most recently written public one (since we don't have likes yet)
+  const bestWrap = document.getElementById('best-entry-wrap');
+  if(pubEntries.length > 0){
+    const best = pubEntries[pubEntries.length - 1];
+    bestWrap.innerHTML = `
+      <div class="best-entry-label">⭐ Latest Public Entry</div>
+      <div class="best-entry">
+        <div class="best-entry-title">${best.title}</div>
+        <div class="best-entry-preview">${best.content}</div>
+      </div>`;
+  } else {
+    bestWrap.innerHTML = '<div class="empty-note">No public entries yet.</div>';
+  }
+
+  // ── WORDLE PROGRESS ──
+  const streak     = parseInt(localStorage.getItem('wordle_streak'))||0;
+  const bestStreak = parseInt(localStorage.getItem('hs_wordle'))||0;
+  const wordsPlayed = JSON.parse(localStorage.getItem('wordle_used')||'[]').length;
+
+  document.getElementById('wordle-streak-big').textContent  = streak;
+  document.getElementById('wordle-best').textContent        = bestStreak || '—';
+  document.getElementById('wordle-words-played').textContent = wordsPlayed + ' words played so far';
+</script>
+</body>
+</html>
+
       --accent: #3f3db3; --soft: rgba(204,224,255,0.75);
       --glow: rgba(96,96,244,0.3);
     }

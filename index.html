@@ -7,14 +7,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { overflow:hidden; font-family:'Poppins',sans-serif; }
+    body { font-family:'Poppins',sans-serif; min-height:100vh; overflow-x:hidden; }
 
     .bgm {
       background: linear-gradient(135deg, #9de8f6, #6060f4);
       min-height: 100vh;
       display: flex; align-items: center; justify-content: center;
-      perspective: 1000px;
-      position: relative;
+      perspective: 1000px; position: relative; padding: 20px;
     }
 
     .bubble {
@@ -22,14 +21,16 @@
       border-radius: 50%; pointer-events: none; z-index: 0;
     }
 
+    /* ── DESKTOP LAYOUT ── */
     .main-box {
       background: #cce0ff;
-      width: 900px; height: 520px; border-radius: 50px;
+      width: 900px; border-radius: 50px;
       display: flex; justify-content: space-around; align-items: center;
-      padding: 0 40px;
+      padding: 40px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.15);
       position: relative; z-index: 1;
       transition: transform 0.1s ease-out;
+      gap: 20px;
     }
 
     .animal-section {
@@ -48,9 +49,8 @@
     }
     .animal { transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .brand-title:hover + .animal { transform: translateY(-25px) scale(1.08); }
-
     .animal img {
-      width: 420px;
+      width: 380px;
       filter: drop-shadow(0 15px 25px rgba(0,0,0,0.15));
       position: relative; z-index: 1;
     }
@@ -61,9 +61,9 @@
       border-radius: 40px; padding: 28px 36px;
       box-shadow: 0 15px 35px rgba(0,0,0,0.1);
       display: flex; flex-direction: column; justify-content: center;
+      flex-shrink: 0;
     }
 
-    /* Tab switcher */
     .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
     .tab {
       flex: 1; padding: 10px; border: none; border-radius: 12px;
@@ -73,7 +73,6 @@
     }
     .tab.active { background: #6060f4; color: white; }
 
-    /* Forms */
     .form-panel { display: none; flex-direction: column; gap: 0; }
     .form-panel.active { display: flex; }
 
@@ -102,11 +101,72 @@
       background: rgba(244,63,94,0.1); color: #f43f5e;
       padding: 8px 12px; border-radius: 10px;
       font-size: 0.78rem; font-weight: 600;
-      margin-bottom: 10px; text-align: center;
-      display: none;
+      margin-bottom: 10px; text-align: center; display: none;
     }
     .flash-msg.show { display: block; }
     .flash-msg.success { background: rgba(16,185,129,0.1); color: #059669; }
+
+    /* ══════════════════════════════
+       MOBILE STYLES
+    ══════════════════════════════ */
+    @media (max-width: 768px) {
+      body { overflow-y: auto; }
+
+      .bgm {
+        align-items: flex-start;
+        padding: 0;
+      }
+
+      /* hide parallax bubbles on mobile */
+      .bubble { display: none; }
+
+      .main-box {
+        width: 100%;
+        min-height: 100vh;
+        flex-direction: column;
+        border-radius: 0;
+        padding: 0 0 40px 0;
+        gap: 0;
+        /* disable parallax tilt on mobile */
+        transform: none !important;
+      }
+
+      /* top banner with logo + animals */
+      .animal-section {
+        width: 100%;
+        background: linear-gradient(160deg, #9de8f6, #6060f4);
+        padding: 40px 20px 20px;
+        border-radius: 0 0 40px 40px;
+        position: relative; overflow: hidden;
+      }
+
+      .brand-title {
+        font-size: 3.5rem;
+        transform: translateY(0);
+        margin-bottom: 10px;
+      }
+
+      /* disable hover jump on mobile */
+      .brand-title:hover + .animal { transform: none; }
+
+      .animal img {
+        width: 200px;
+      }
+
+      /* login box full width */
+      .login-box {
+        width: 100%;
+        border-radius: 0;
+        padding: 28px 24px;
+        box-shadow: none;
+        flex: 1;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .brand-title { font-size: 2.8rem; }
+      .animal img  { width: 160px; }
+    }
   </style>
 </head>
 <body>
@@ -125,20 +185,15 @@
 
       <div class="login-box">
         <div id="flash" class="flash-msg"></div>
-
         <div class="tabs">
           <button class="tab active" onclick="switchTab('login')">Login</button>
           <button class="tab"        onclick="switchTab('register')">Sign Up</button>
         </div>
-
-        <!-- LOGIN -->
         <div class="form-panel active" id="login-form">
           <input type="text"     id="login-user" placeholder="Username">
           <input type="password" id="login-pass" placeholder="Password">
           <button class="submit-btn" onclick="doLogin()">Login</button>
         </div>
-
-        <!-- REGISTER -->
         <div class="form-panel" id="register-form">
           <input type="text"     id="reg-user"    placeholder="Username">
           <input type="password" id="reg-pass"    placeholder="Password">
@@ -150,75 +205,61 @@
   </div>
 
   <script>
-    // ── check if already logged in ──
-    if(localStorage.getItem('zen_user')){
-      window.location.href = 'dashboard.html';
-    }
+    if(localStorage.getItem('zen_user')) window.location.href = 'dashboard.html';
+
+    function isMobile(){ return window.innerWidth <= 768; }
 
     function switchTab(tab){
       document.querySelectorAll('.tab').forEach((t,i)=>{
-        t.classList.toggle('active', (i===0)===(tab==='login'));
+        t.classList.toggle('active',(i===0)===(tab==='login'));
       });
-      document.getElementById('login-form').classList.toggle('active', tab==='login');
-      document.getElementById('register-form').classList.toggle('active', tab==='register');
+      document.getElementById('login-form').classList.toggle('active',tab==='login');
+      document.getElementById('register-form').classList.toggle('active',tab==='register');
       hideFlash();
     }
-
-    function showFlash(msg, type='error'){
-      const el = document.getElementById('flash');
-      el.textContent = msg;
-      el.className = 'flash-msg show' + (type==='success' ? ' success' : '');
+    function showFlash(msg,type='error'){
+      const el=document.getElementById('flash');
+      el.textContent=msg;
+      el.className='flash-msg show'+(type==='success'?' success':'');
     }
-    function hideFlash(){
-      document.getElementById('flash').className = 'flash-msg';
-    }
+    function hideFlash(){ document.getElementById('flash').className='flash-msg'; }
 
     function doLogin(){
-      const username = document.getElementById('login-user').value.trim();
-      const password = document.getElementById('login-pass').value;
-
-      if(!username || !password){ showFlash('Please fill in all fields.'); return; }
-
-      // get stored users
-      const users = JSON.parse(localStorage.getItem('zen_users') || '{}');
-
+      const username=document.getElementById('login-user').value.trim();
+      const password=document.getElementById('login-pass').value;
+      if(!username||!password){ showFlash('Please fill in all fields.'); return; }
+      const users=JSON.parse(localStorage.getItem('zen_users')||'{}');
       if(!users[username]){ showFlash('Username not found.'); return; }
-      if(users[username] !== password){ showFlash('Wrong password.'); return; }
-
-      // save session
-      localStorage.setItem('zen_user', username);
-      window.location.href = 'dashboard.html';
+      if(users[username]!==password){ showFlash('Wrong password.'); return; }
+      localStorage.setItem('zen_user',username);
+      window.location.href='dashboard.html';
     }
-
     function doRegister(){
-      const username = document.getElementById('reg-user').value.trim();
-      const password = document.getElementById('reg-pass').value;
-      const confirm  = document.getElementById('reg-confirm').value;
-
-      if(!username || !password || !confirm){ showFlash('Please fill in all fields.'); return; }
-      if(password !== confirm){ showFlash('Passwords do not match.'); return; }
-      if(password.length < 4){ showFlash('Password too short (min 4 chars).'); return; }
-
-      const users = JSON.parse(localStorage.getItem('zen_users') || '{}');
+      const username=document.getElementById('reg-user').value.trim();
+      const password=document.getElementById('reg-pass').value;
+      const confirm =document.getElementById('reg-confirm').value;
+      if(!username||!password||!confirm){ showFlash('Please fill in all fields.'); return; }
+      if(password!==confirm){ showFlash('Passwords do not match.'); return; }
+      if(password.length<4){ showFlash('Password too short (min 4 chars).'); return; }
+      const users=JSON.parse(localStorage.getItem('zen_users')||'{}');
       if(users[username]){ showFlash('Username already taken.'); return; }
-
-      users[username] = password;
-      localStorage.setItem('zen_users', JSON.stringify(users));
-      localStorage.setItem('zen_user', username);
-
-      showFlash('Account created! Redirecting...', 'success');
-      setTimeout(()=> window.location.href = 'dashboard.html', 1000);
+      users[username]=password;
+      localStorage.setItem('zen_users',JSON.stringify(users));
+      localStorage.setItem('zen_user',username);
+      showFlash('Account created! Redirecting...','success');
+      setTimeout(()=>window.location.href='dashboard.html',1000);
     }
 
-    // parallax
-    document.addEventListener("mousemove", (e) => {
-      const mouseX = e.clientX / window.innerWidth - 0.5;
-      const mouseY = e.clientY / window.innerHeight - 0.5;
-      const card = document.getElementById("main-card");
-      card.style.transform = `translateX(${mouseX*30}px) translateY(${mouseY*30}px) rotateY(${mouseX*5}deg) rotateX(${mouseY*-5}deg)`;
-      document.querySelectorAll(".bubble").forEach(b => {
-        const s = b.getAttribute("data-speed");
-        b.style.transform = `translate(${mouseX*s*50}px, ${mouseY*s*50}px)`;
+    // parallax — desktop only
+    document.addEventListener("mousemove",(e)=>{
+      if(isMobile()) return;
+      const mouseX=e.clientX/window.innerWidth-0.5;
+      const mouseY=e.clientY/window.innerHeight-0.5;
+      const card=document.getElementById("main-card");
+      card.style.transform=`translateX(${mouseX*30}px) translateY(${mouseY*30}px) rotateY(${mouseX*5}deg) rotateX(${mouseY*-5}deg)`;
+      document.querySelectorAll(".bubble").forEach(b=>{
+        const s=b.getAttribute("data-speed");
+        b.style.transform=`translate(${mouseX*s*50}px,${mouseY*s*50}px)`;
       });
     });
   </script>

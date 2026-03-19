@@ -7,73 +7,89 @@
   <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --paper: rgba(255,255,255,0.92);
-      --text: #1e293b;
-      --header-color: #ffffff;
-      --glass-border: rgba(255,255,255,0.5);
-      --bg-dim: rgba(0,0,0,0);
-      --label: #3f3db3;
+      --paper:rgba(255,255,255,0.92); --text:#1e293b;
+      --header-color:#ffffff; --glass-border:rgba(255,255,255,0.5);
+      --bg-dim:rgba(0,0,0,0); --label:#3f3db3;
     }
     [data-theme="dark"] {
-      --paper: rgba(15,23,42,0.92);
-      --text: #f1f5f9;
-      --header-color: #f1f5f9;
-      --glass-border: rgba(255,255,255,0.1);
-      --bg-dim: rgba(0,0,0,0.55);
-      --label: #00d2ff;
+      --paper:rgba(15,23,42,0.92); --text:#f1f5f9;
+      --header-color:#f1f5f9; --glass-border:rgba(255,255,255,0.1);
+      --bg-dim:rgba(0,0,0,0.55); --label:#00d2ff;
     }
-
     * { margin:0; padding:0; box-sizing:border-box; }
     body, html { height:100vh; width:100vw; font-family:'Poppins',sans-serif; overflow:hidden; }
 
     .studio-root {
-      position: relative; width:100%; height:100%;
-      background: url('images/table.png') no-repeat center center;
-      background-size: cover;
-      display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
+      position:relative; width:100%; height:100%;
+      background:url('images/table.png') no-repeat center center;
+      background-size:cover;
+      display:flex; flex-direction:column;
+      justify-content:center; align-items:center;
     }
     .studio-root::before {
       content:''; position:absolute; inset:0;
-      background: var(--bg-dim); pointer-events:none;
-      transition: background 0.5s; z-index:1;
+      background:var(--bg-dim); pointer-events:none;
+      transition:background 0.5s; z-index:1;
     }
 
-    /* NAV */
+    /* ── NAV (desktop) ── */
     nav {
-      position: absolute; top:0; left:0; right:0; z-index:100;
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 40px;
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,0.2);
+      position:absolute; top:0; left:0; right:0; z-index:100;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 40px;
+      background:rgba(255,255,255,0.15);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,255,255,0.2);
     }
-    .nav-brand {
-      font-family:'Righteous',cursive; font-size:1.4rem;
-      color: white; text-decoration: none;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
+    .nav-brand { font-family:'Righteous',cursive; font-size:1.4rem; color:white; text-decoration:none; text-shadow:0 2px 10px rgba(0,0,0,0.3); }
     .nav-right { display:flex; align-items:center; gap:16px; }
-    .nav-right a {
-      text-decoration:none; color:white; font-weight:700;
-      font-size:0.78rem; letter-spacing:1px; text-transform:uppercase;
-      opacity:0.8; transition:opacity 0.2s;
-    }
+    .nav-right a { text-decoration:none; color:white; font-weight:700; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; opacity:0.8; transition:opacity 0.2s; }
     .nav-right a:hover { opacity:1; }
+    .logout-btn { background:rgba(244,63,94,0.2); color:#f43f5e; border:none; padding:7px 16px; border-radius:20px; font-family:'Poppins',sans-serif; font-weight:900; font-size:0.75rem; cursor:pointer; }
     .switch { position:relative; display:inline-block; width:44px; height:22px; }
     .switch input { opacity:0; width:0; height:0; }
-    .slider {
-      position:absolute; cursor:pointer; inset:0;
-      background:rgba(0,0,0,0.2); border-radius:34px; transition:.4s;
-    }
-    .slider:before {
-      content:""; position:absolute; height:16px; width:16px;
-      left:3px; bottom:3px; background:white; border-radius:50%; transition:.4s;
-    }
-    input:checked + .slider { background: var(--label); }
+    .slider { position:absolute; cursor:pointer; inset:0; background:rgba(0,0,0,0.2); border-radius:34px; transition:.4s; }
+    .slider:before { content:""; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.4s; }
+    input:checked + .slider { background:var(--label); }
     input:checked + .slider:before { transform:translateX(22px); }
 
-    /* VIEWS */
+    /* ── HAMBURGER (mobile only) ── */
+    .hamburger {
+      display:none; flex-direction:column; gap:5px;
+      background:none; border:none; cursor:pointer; padding:4px; z-index:200;
+    }
+    .hamburger span { display:block; width:24px; height:2px; background:white; border-radius:2px; transition:0.3s; }
+
+    /* ── MOBILE DRAWER ── */
+    .drawer {
+      display:none; position:fixed; top:0; right:0; bottom:0;
+      width:260px; background:var(--paper);
+      backdrop-filter:blur(20px); z-index:300;
+      flex-direction:column; padding:60px 28px 28px;
+      gap:6px; box-shadow:-10px 0 40px rgba(0,0,0,0.2);
+      transform:translateX(100%); transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    .drawer.open { transform:translateX(0); }
+    .drawer-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.4); z-index:299;
+    }
+    .drawer-overlay.open { display:block; }
+    .drawer a, .drawer button.d-btn {
+      text-decoration:none; color:var(--text); font-weight:700;
+      font-size:1rem; padding:12px 0; border-bottom:1px solid rgba(0,0,0,0.06);
+      display:block; background:none; border-left:none; border-right:none;
+      border-top:none; text-align:left; cursor:pointer; font-family:'Poppins',sans-serif;
+    }
+    .drawer a:hover { color:var(--label); }
+    .drawer-close {
+      position:absolute; top:16px; right:20px;
+      background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text);
+    }
+    .drawer-dark { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid rgba(0,0,0,0.06); }
+    .drawer-dark span { font-weight:700; font-size:0.9rem; }
+
+    /* ── VIEWS ── */
     .view { display:none; flex-direction:column; align-items:center; width:100%; z-index:10; padding:0 20px; }
     .view.active { display:flex; }
 
@@ -92,12 +108,11 @@
     }
     .entry-title-input {
       width:100%; padding:18px 40px 10px;
-      font-size:1.1rem; font-weight:700;
-      color:var(--text); background:var(--paper);
-      border:none; outline:none;
+      font-size:1.1rem; font-weight:700; color:var(--text);
+      background:var(--paper); border:none; outline:none;
       font-family:'Poppins',sans-serif;
-      border-bottom: 1px solid var(--glass-border);
-      transition: background 0.4s, color 0.4s;
+      border-bottom:1px solid var(--glass-border);
+      transition:background 0.4s,color 0.4s;
     }
     .zen-textarea {
       width:100%; height:calc(100% - 52px);
@@ -107,157 +122,133 @@
       font-family:'Poppins',sans-serif;
       transition:background 0.4s,color 0.4s;
     }
-
-    /* controls */
     .controls-wrapper {
-      margin-top:22px;
-      display:flex; align-items:center; gap:14px; z-index:100; flex-wrap:wrap; justify-content:center;
+      margin-top:22px; display:flex; align-items:center; gap:14px;
+      z-index:100; flex-wrap:wrap; justify-content:center;
     }
     .glass-ui {
-      background:rgba(255,255,255,0.12);
-      backdrop-filter:blur(25px);
-      border:1px solid var(--glass-border);
-      padding:10px 18px; border-radius:50px;
-      display:flex; gap:12px;
+      background:rgba(255,255,255,0.12); backdrop-filter:blur(25px);
+      border:1px solid var(--glass-border); padding:10px 18px;
+      border-radius:50px; display:flex; gap:12px;
       box-shadow:0 10px 30px rgba(0,0,0,0.3);
     }
-    .swatch {
-      width:28px; height:28px; border-radius:50%;
-      cursor:pointer; border:2px solid white;
-      transition:0.3s cubic-bezier(0.175,0.885,0.32,1.275);
-    }
+    .swatch { width:28px; height:28px; border-radius:50%; cursor:pointer; border:2px solid white; transition:0.3s cubic-bezier(0.175,0.885,0.32,1.275); }
     .swatch:hover { transform:scale(1.3) rotate(15deg); }
-
-    .btn {
-      border:none; padding:12px 24px; border-radius:40px;
-      font-weight:800; cursor:pointer; text-transform:uppercase;
-      font-size:0.72rem; letter-spacing:1px; transition:0.3s;
-      box-shadow:0 8px 20px rgba(0,0,0,0.25); font-family:'Poppins',sans-serif;
-    }
-    .btn:hover { transform:translateY(-4px); box-shadow:0 14px 28px rgba(0,0,0,0.4); }
+    .btn { border:none; padding:12px 24px; border-radius:40px; font-weight:800; cursor:pointer; text-transform:uppercase; font-size:0.72rem; letter-spacing:1px; transition:0.3s; box-shadow:0 8px 20px rgba(0,0,0,0.25); font-family:'Poppins',sans-serif; }
+    .btn:hover { transform:translateY(-4px); }
     .mode-btn    { background:#ffffff; color:#0f172a; }
     .library-btn { background:transparent; color:white; border:1.5px solid white; }
     .save-btn    { background:#10b981; color:white; }
     .save-btn:hover { background:#059669; }
-
-    /* public toggle */
-    .public-toggle {
-      display:flex; align-items:center; gap:8px;
-      background:rgba(255,255,255,0.12); padding:10px 18px;
-      border-radius:40px; color:white; font-size:0.75rem;
-      font-weight:800; letter-spacing:1px; text-transform:uppercase;
-      cursor:pointer; user-select:none;
-      border:1.5px solid rgba(255,255,255,0.3);
-    }
+    .public-toggle { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.12); padding:10px 18px; border-radius:40px; color:white; font-size:0.75rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; cursor:pointer; user-select:none; border:1.5px solid rgba(255,255,255,0.3); }
     .public-toggle input { width:16px; height:16px; cursor:pointer; accent-color:#10b981; }
 
     /* ── LIBRARY VIEW ── */
-    .library-header {
-      display:flex; align-items:center; gap:16px;
-      width:100%; max-width:900px; margin-bottom:20px;
-    }
-    .lib-title {
-      font-family:'Righteous',cursive; font-size:1.8rem;
-      color:white; text-shadow:0 4px 15px rgba(0,0,0,0.4);
-    }
+    .library-header { display:flex; align-items:center; gap:16px; width:100%; max-width:900px; margin-bottom:20px; flex-wrap:wrap; }
+    .lib-title { font-family:'Righteous',cursive; font-size:1.8rem; color:white; text-shadow:0 4px 15px rgba(0,0,0,0.4); }
     .lib-tabs { display:flex; gap:10px; margin-left:auto; }
-    .lib-tab {
-      padding:8px 20px; border-radius:20px; border:none;
-      font-family:'Poppins',sans-serif; font-weight:700;
-      font-size:0.78rem; cursor:pointer; transition:0.3s;
-      background:rgba(255,255,255,0.15); color:white;
-    }
+    .lib-tab { padding:8px 20px; border-radius:20px; border:none; font-family:'Poppins',sans-serif; font-weight:700; font-size:0.78rem; cursor:pointer; transition:0.3s; background:rgba(255,255,255,0.15); color:white; }
     .lib-tab.active { background:var(--label); }
-
-    .entries-grid {
-      display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-      gap:16px; width:100%; max-width:900px;
-      max-height:52vh; overflow-y:auto; padding-right:4px;
-    }
+    .entries-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; width:100%; max-width:900px; max-height:52vh; overflow-y:auto; padding-right:4px; }
     .entries-grid::-webkit-scrollbar { width:6px; }
-    .entries-grid::-webkit-scrollbar-track { background:transparent; }
     .entries-grid::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.3); border-radius:3px; }
-
-    .entry-card {
-      background:var(--paper); backdrop-filter:blur(15px);
-      border-radius:20px; padding:20px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.1);
-      transition:transform 0.3s; cursor:pointer;
-    }
+    .entry-card { background:var(--paper); backdrop-filter:blur(15px); border-radius:20px; padding:20px; box-shadow:0 8px 24px rgba(0,0,0,0.1); transition:transform 0.3s; cursor:pointer; }
     .entry-card:hover { transform:translateY(-4px); }
     .entry-card-title { font-weight:700; font-size:1rem; color:var(--text); margin-bottom:6px; }
-    .entry-card-preview {
-      font-size:0.8rem; color:var(--text); opacity:0.65;
-      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-    }
-    .entry-card-meta {
-      display:flex; justify-content:space-between; align-items:center;
-      margin-top:12px; font-size:0.72rem; opacity:0.55; color:var(--text);
-    }
-    .badge {
-      padding:3px 10px; border-radius:20px; font-size:0.68rem; font-weight:700;
-    }
+    .entry-card-preview { font-size:0.8rem; color:var(--text); opacity:0.65; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .entry-card-meta { display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:0.72rem; opacity:0.55; color:var(--text); }
+    .badge { padding:3px 10px; border-radius:20px; font-size:0.68rem; font-weight:700; }
     .badge-pub  { background:#d1fae5; color:#059669; }
     .badge-priv { background:#fee2e2; color:#dc2626; }
     .entry-card-actions { display:flex; gap:8px; margin-top:10px; }
-    .ea-btn {
-      flex:1; padding:6px; border-radius:10px; border:none;
-      font-size:0.72rem; font-weight:700; cursor:pointer; transition:0.2s;
-    }
+    .ea-btn { flex:1; padding:6px; border-radius:10px; border:none; font-size:0.72rem; font-weight:700; cursor:pointer; transition:0.2s; }
     .ea-edit   { background:#ede9fe; color:#7c3aed; }
     .ea-delete { background:#fee2e2; color:#dc2626; }
-    .ea-btn:hover { filter:brightness(0.9); }
+    .empty-msg { color:white; text-align:center; opacity:0.7; font-size:1rem; padding:40px; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
 
-    .empty-msg {
-      color:white; text-align:center; opacity:0.7;
-      font-size:1rem; padding:40px; text-shadow:0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    /* toast */
-    .toast {
-      position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
-      background:#10b981; color:white; padding:12px 28px;
-      border-radius:30px; font-weight:700; font-size:0.85rem;
-      z-index:999; opacity:0; transition:opacity 0.3s;
-      pointer-events:none;
-    }
+    .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#10b981; color:white; padding:12px 28px; border-radius:30px; font-weight:700; font-size:0.85rem; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; }
     .toast.show { opacity:1; }
-  </style>
 
-  <script>
-    (function(){
-      const t = localStorage.getItem('zenTheme') || 'light';
-      document.documentElement.setAttribute('data-theme', t);
-    })();
-  </script>
+    /* ══════════════════════════════
+       MOBILE STYLES
+    ══════════════════════════════ */
+    @media (max-width: 768px) {
+      body, html { overflow:auto; height:auto; }
+
+      .studio-root { min-height:100vh; height:auto; justify-content:flex-start; padding-bottom:30px; }
+
+      /* show hamburger, hide full nav-right */
+      .hamburger { display:flex; }
+      .nav-right  { display:none; }
+      .drawer     { display:flex; }
+      nav { padding:14px 20px; }
+
+      /* write view */
+      .view.active { padding:0 12px; }
+
+      .editor-container {
+        width:100%; height:55vmax; max-height:320px;
+        border-radius:20px; margin-top:10px;
+      }
+      .entry-title-input { padding:14px 18px 8px; font-size:0.95rem; }
+      .zen-textarea { padding:12px 18px; font-size:0.95rem; }
+
+      .controls-wrapper { gap:10px; margin-top:14px; }
+      .glass-ui { padding:8px 14px; gap:10px; }
+      .swatch { width:24px; height:24px; }
+      .btn { padding:10px 18px; font-size:0.68rem; }
+
+      /* library */
+      .library-header { gap:10px; }
+      .lib-title { font-size:1.3rem; }
+      .lib-tabs { margin-left:0; }
+      .lib-tab { padding:6px 14px; font-size:0.72rem; }
+      .entries-grid { grid-template-columns:1fr; max-height:none; overflow:visible; }
+    }
+  </style>
+  <script>(function(){ const t=localStorage.getItem('zenTheme')||'light'; document.documentElement.setAttribute('data-theme',t); })();</script>
 </head>
 <body>
 <div class="studio-root">
 
-  <!-- NAV -->
   <nav>
     <a class="nav-brand" href="dashboard.html">Zen'd Out</a>
     <div class="nav-right">
-      <a href="dashboard.html">Home</a>
+      <a href="dashboard.html">🏠 Home</a>
       <a href="puzzles.html">Puzzles</a>
       <a href="analytics.html">Analytics</a>
       <a href="social.html">Social</a>
       <span style="font-size:0.65rem;font-weight:900;color:white;opacity:0.6;">DARK</span>
-      <label class="switch">
-        <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
-        <span class="slider"></span>
-      </label>
-      <a href="#" onclick="logout()">Logout</a>
+      <label class="switch"><input type="checkbox" id="theme-toggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
+    <!-- hamburger (mobile) -->
+    <button class="hamburger" onclick="openDrawer()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
 
-  <!-- ── WRITE VIEW ── -->
+  <!-- MOBILE DRAWER -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    <a href="dashboard.html">🏠 Home</a>
+    <a href="puzzles.html">🎮 Puzzles</a>
+    <a href="analytics.html">📊 Analytics</a>
+    <a href="social.html">🌍 Social</a>
+    <div class="drawer-dark">
+      <span>🌙 Dark Mode</span>
+      <label class="switch"><input type="checkbox" id="theme-toggle-drawer" onchange="toggleTheme()"><span class="slider"></span></label>
+    </div>
+    <button class="d-btn" onclick="logout()" style="color:#f43f5e;">Logout</button>
+  </div>
+
+  <!-- WRITE VIEW -->
   <div class="view active" id="view-write">
     <div class="editor-container">
       <input class="entry-title-input" id="entry-title" placeholder="Entry title...">
       <textarea class="zen-textarea" id="main-editor" placeholder="Clear your mind..."></textarea>
     </div>
-
     <section class="controls-wrapper">
       <div class="glass-ui">
         <div class="swatch" style="background:#a855f7;" onclick="setMood('purple')"></div>
@@ -266,18 +257,14 @@
         <div class="swatch" style="background:#f59e0b;" onclick="setMood('gold')"></div>
         <div class="swatch" style="background:#ffffff;" onclick="setMood('default')"></div>
       </div>
-
-      <label class="public-toggle">
-        <input type="checkbox" id="is-public"> Public
-      </label>
-
-      <button class="btn mode-btn"    onclick="toggleTheme()">🌙 Dark Mode</button>
-      <button class="btn library-btn" onclick="showLibrary()">📚 My Library</button>
-      <button class="btn save-btn"    onclick="saveEntry()">💾 Save Entry</button>
+      <label class="public-toggle"><input type="checkbox" id="is-public"> Public</label>
+      <button class="btn mode-btn"    onclick="toggleTheme()">🌙 Dark</button>
+      <button class="btn library-btn" onclick="showLibrary()">📚 Library</button>
+      <button class="btn save-btn"    onclick="saveEntry()">💾 Save</button>
     </section>
   </div>
 
-  <!-- ── LIBRARY VIEW ── -->
+  <!-- LIBRARY VIEW -->
   <div class="view" id="view-library">
     <div class="library-header">
       <span class="lib-title">📚 My Library</span>
@@ -286,95 +273,86 @@
         <button class="lib-tab"        id="tab-private" onclick="filterLibrary('private')">Private</button>
         <button class="lib-tab"        id="tab-public"  onclick="filterLibrary('public')">Public</button>
       </div>
-      <button class="btn save-btn" style="margin-left:12px;" onclick="showWrite()">✏️ New Entry</button>
+      <button class="btn save-btn" style="margin-left:12px;" onclick="showWrite()">✏️ New</button>
     </div>
     <div class="entries-grid" id="entries-grid"></div>
   </div>
 
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── auth guard ──
-  const currentUser = localStorage.getItem('zen_user');
-  if(!currentUser) window.location.href = 'index.html';
+  const currentUser=localStorage.getItem('zen_user');
+  if(!currentUser) window.location.href='index.html';
 
-  // ── theme ──
-  const toggle = document.getElementById('theme-toggle');
-  toggle.checked = localStorage.getItem('zenTheme') === 'dark';
-
-  function toggleTheme(){
-    const dark = toggle.checked = !toggle.checked;
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    localStorage.setItem('zenTheme', dark ? 'dark' : 'light');
-    updateColors();
-  }
-
-  // ── mood / colours ──
-  let activeMood = 'default';
-  const themeMap = {
-    purple:  { light:'rgba(233,213,255,0.92)', dark:'rgba(59,7,100,0.92)' },
-    teal:    { light:'rgba(153,246,228,0.92)', dark:'rgba(4,47,46,0.92)' },
-    rose:    { light:'rgba(254,205,211,0.92)', dark:'rgba(76,5,25,0.92)' },
-    gold:    { light:'rgba(254,243,199,0.92)', dark:'rgba(69,26,3,0.92)' },
-    default: { light:'rgba(255,255,255,0.92)', dark:'rgba(15,23,42,0.92)' }
+  // theme
+  const syncToggles=()=>{
+    const dark=localStorage.getItem('zenTheme')==='dark';
+    document.querySelectorAll('#theme-toggle,#theme-toggle-drawer').forEach(t=>t.checked=dark);
   };
-  function setMood(mood){ activeMood = mood; updateColors(); }
-  function updateColors(){
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.style.setProperty('--paper', themeMap[activeMood][isDark?'dark':'light']);
+  syncToggles();
+  function toggleTheme(){
+    const dark=!!(document.getElementById('theme-toggle').checked||document.getElementById('theme-toggle-drawer').checked);
+    document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+    localStorage.setItem('zenTheme',dark?'dark':'light');
+    syncToggles(); updateColors();
   }
 
-  // ── editing state ──
-  let editingId = null;
+  // drawer
+  function openDrawer(){
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawer-overlay').classList.add('open');
+  }
+  function closeDrawer(){
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawer-overlay').classList.remove('open');
+  }
 
-  // ── save entry ──
+  function logout(){ localStorage.removeItem('zen_user'); window.location.href='index.html'; }
+
+  // mood
+  let activeMood='default';
+  const themeMap={
+    purple:{light:'rgba(233,213,255,0.92)',dark:'rgba(59,7,100,0.92)'},
+    teal:  {light:'rgba(153,246,228,0.92)',dark:'rgba(4,47,46,0.92)'},
+    rose:  {light:'rgba(254,205,211,0.92)',dark:'rgba(76,5,25,0.92)'},
+    gold:  {light:'rgba(254,243,199,0.92)',dark:'rgba(69,26,3,0.92)'},
+    default:{light:'rgba(255,255,255,0.92)',dark:'rgba(15,23,42,0.92)'}
+  };
+  function setMood(mood){ activeMood=mood; updateColors(); }
+  function updateColors(){
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    document.documentElement.style.setProperty('--paper',themeMap[activeMood][isDark?'dark':'light']);
+  }
+
+  let editingId=null;
+
   function saveEntry(){
-    const title   = document.getElementById('entry-title').value.trim();
-    const content = document.getElementById('main-editor').value.trim();
-    const isPublic = document.getElementById('is-public').checked;
-
+    const title=document.getElementById('entry-title').value.trim();
+    const content=document.getElementById('main-editor').value.trim();
+    const isPublic=document.getElementById('is-public').checked;
     if(!title){ showToast('Please add a title!'); return; }
     if(!content){ showToast('Entry is empty!'); return; }
-
-    const entries = getEntries();
-
-    if(editingId !== null){
-      const idx = entries.findIndex(e => e.id === editingId);
-      if(idx !== -1){
-        entries[idx] = { ...entries[idx], title, content, isPublic, mood: activeMood };
-      }
-      editingId = null;
+    const entries=getEntries();
+    if(editingId!==null){
+      const idx=entries.findIndex(e=>e.id===editingId);
+      if(idx!==-1) entries[idx]={...entries[idx],title,content,isPublic,mood:activeMood};
+      editingId=null;
     } else {
-      entries.push({
-        id:       Date.now(),
-        user:     currentUser,
-        title, content, isPublic,
-        mood:     activeMood,
-        date:     new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
-      });
+      entries.push({id:Date.now(),user:currentUser,title,content,isPublic,mood:activeMood,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})});
     }
-
     saveEntries(entries);
-    document.getElementById('entry-title').value = '';
-    document.getElementById('main-editor').value = '';
-    document.getElementById('is-public').checked = false;
-    activeMood = 'default'; updateColors();
+    document.getElementById('entry-title').value='';
+    document.getElementById('main-editor').value='';
+    document.getElementById('is-public').checked=false;
+    activeMood='default'; updateColors();
     showToast('Entry saved! ✨');
   }
 
-  // ── localStorage helpers ──
-  function getEntries(){
-    return JSON.parse(localStorage.getItem('zen_entries') || '[]');
-  }
-  function saveEntries(arr){
-    localStorage.setItem('zen_entries', JSON.stringify(arr));
-  }
+  function getEntries(){ return JSON.parse(localStorage.getItem('zen_entries')||'[]'); }
+  function saveEntries(arr){ localStorage.setItem('zen_entries',JSON.stringify(arr)); }
 
-  // ── library ──
-  let libFilter = 'all';
-
+  let libFilter='all';
   function showLibrary(){
     document.getElementById('view-write').classList.remove('active');
     document.getElementById('view-library').classList.add('active');
@@ -383,78 +361,57 @@
   function showWrite(){
     document.getElementById('view-library').classList.remove('active');
     document.getElementById('view-write').classList.add('active');
-    editingId = null;
-    document.getElementById('entry-title').value = '';
-    document.getElementById('main-editor').value = '';
-    document.getElementById('is-public').checked = false;
+    editingId=null;
+    document.getElementById('entry-title').value='';
+    document.getElementById('main-editor').value='';
+    document.getElementById('is-public').checked=false;
   }
-
   function filterLibrary(f){
-    libFilter = f;
-    document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
+    libFilter=f;
+    document.querySelectorAll('.lib-tab').forEach(t=>t.classList.remove('active'));
     document.getElementById('tab-'+f).classList.add('active');
     renderEntries();
   }
-
   function renderEntries(){
-    const grid = document.getElementById('entries-grid');
-    let entries = getEntries().filter(e => e.user === currentUser);
-
-    if(libFilter === 'public')  entries = entries.filter(e => e.isPublic);
-    if(libFilter === 'private') entries = entries.filter(e => !e.isPublic);
-
-    entries = entries.reverse(); // newest first
-
-    if(entries.length === 0){
-      grid.innerHTML = '<div class="empty-msg">No entries here yet. Start writing!</div>';
-      return;
-    }
-
-    grid.innerHTML = entries.map(e => `
+    const grid=document.getElementById('entries-grid');
+    let entries=getEntries().filter(e=>e.user===currentUser);
+    if(libFilter==='public')  entries=entries.filter(e=>e.isPublic);
+    if(libFilter==='private') entries=entries.filter(e=>!e.isPublic);
+    entries=entries.reverse();
+    if(entries.length===0){ grid.innerHTML='<div class="empty-msg">No entries here yet. Start writing!</div>'; return; }
+    grid.innerHTML=entries.map(e=>`
       <div class="entry-card">
         <div class="entry-card-title">${e.title}</div>
         <div class="entry-card-preview">${e.content}</div>
         <div class="entry-card-meta">
           <span>${e.date}</span>
-          <span class="badge ${e.isPublic ? 'badge-pub' : 'badge-priv'}">${e.isPublic ? 'Public' : 'Private'}</span>
+          <span class="badge ${e.isPublic?'badge-pub':'badge-priv'}">${e.isPublic?'Public':'Private'}</span>
         </div>
         <div class="entry-card-actions">
           <button class="ea-btn ea-edit"   onclick="editEntry(${e.id})">Edit</button>
           <button class="ea-btn ea-delete" onclick="deleteEntry(${e.id})">Delete</button>
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
-
   function editEntry(id){
-    const entry = getEntries().find(e => e.id === id);
+    const entry=getEntries().find(e=>e.id===id);
     if(!entry) return;
-    editingId = id;
-    document.getElementById('entry-title').value   = entry.title;
-    document.getElementById('main-editor').value   = entry.content;
-    document.getElementById('is-public').checked   = entry.isPublic;
-    activeMood = entry.mood || 'default'; updateColors();
+    editingId=id;
+    document.getElementById('entry-title').value=entry.title;
+    document.getElementById('main-editor').value=entry.content;
+    document.getElementById('is-public').checked=entry.isPublic;
+    activeMood=entry.mood||'default'; updateColors();
     showWrite();
   }
-
   function deleteEntry(id){
     if(!confirm('Delete this entry?')) return;
-    saveEntries(getEntries().filter(e => e.id !== id));
-    renderEntries();
-    showToast('Entry deleted.');
+    saveEntries(getEntries().filter(e=>e.id!==id));
+    renderEntries(); showToast('Entry deleted.');
   }
-
-  // ── toast ──
   function showToast(msg){
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-  }
-
-  // ── logout ──
-  function logout(){
-    localStorage.removeItem('zen_user');
-    window.location.href = 'index.html';
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
   }
 </script>
 </body>

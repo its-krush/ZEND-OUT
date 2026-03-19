@@ -214,6 +214,25 @@
     /* TOAST */
     .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--accent); color:white; padding:11px 26px; border-radius:30px; font-weight:700; font-size:0.82rem; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; }
     .toast.show { opacity:1; }
+  
+    .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;}
+    .hamburger span{display:block;width:24px;height:2px;background:var(--text);border-radius:2px;}
+    .drawer{display:none;position:fixed;top:0;right:0;bottom:0;width:260px;background:var(--card);backdrop-filter:blur(20px);z-index:300;flex-direction:column;padding:60px 28px 28px;gap:6px;box-shadow:-10px 0 40px rgba(0,0,0,0.2);transform:translateX(100%);transition:transform 0.35s ease;overflow-y:auto;}
+    .drawer.open{transform:translateX(0);}
+    .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:299;}
+    .drawer-overlay.open{display:block;}
+    .drawer a,.drawer button.d-btn{text-decoration:none;color:var(--text);font-weight:700;font-size:1rem;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.06);display:block;background:none;border-left:none;border-right:none;border-top:none;text-align:left;cursor:pointer;font-family:'Poppins',sans-serif;}
+    .drawer-close{position:absolute;top:16px;right:20px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text);}
+    .drawer-dark{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(0,0,0,0.06);}
+    .drawer-dark span{font-weight:700;font-size:0.9rem;}
+    @media(max-width:768px){
+      .nav-right{display:none;} .hamburger{display:flex;} .drawer{display:flex;}
+      nav{padding:14px 20px;} .page{padding:20px 14px;}
+      .users-grid{grid-template-columns:1fr 1fr;}
+      .modal{border-radius:20px 20px 0 0;max-height:95vh;}
+      .modal-overlay{align-items:flex-end;padding:0;}
+    }
+    @media(max-width:400px){.users-grid{grid-template-columns:1fr;}}
   </style>
   <script>(function(){ const t=localStorage.getItem('zenTheme')||'light'; document.documentElement.setAttribute('data-theme',t); })();</script>
 </head>
@@ -230,7 +249,23 @@
     <label class="switch"><input type="checkbox" id="theme-toggle" onchange="toggleTheme()"><span class="slider"></span></label>
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
+  <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
 </nav>
+
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <button class="drawer-close" onclick="closeDrawer()">&#x2715;</button>
+  <a href="dashboard.html">&#x1F3E0; Home</a>
+  <a href="journal.html">&#x1F4D4; Journal</a>
+  <a href="puzzles.html">&#x1F3AE; Puzzles</a>
+  <a href="analytics.html">&#x1F4CA; Analytics</a>
+  <a href="social.html">&#x1F30D; Social</a>
+  <div class="drawer-dark">
+    <span>&#x1F319; Dark Mode</span>
+    <label class="switch"><input type="checkbox" id="theme-toggle-drawer" onchange="toggleTheme()"><span class="slider"></span></label>
+  </div>
+  <button class="d-btn" onclick="logout()" style="color:#f43f5e;">Logout</button>
+</div>
 
 <div class="page">
   <h1 class="page-title">🌍 Social</h1>
@@ -273,6 +308,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
+
+  function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');}
+  function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');}
   const me = localStorage.getItem('zen_user');
   if(!me) window.location.href = 'index.html';
 

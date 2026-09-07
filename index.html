@@ -141,6 +141,7 @@
         <!-- REGISTER -->
         <div class="form-panel" id="register-form">
           <input type="text"     id="reg-user"    placeholder="Username">
+          <input type="email"    id="reg-email"   placeholder="Email">
           <input type="password" id="reg-pass"    placeholder="Password">
           <input type="password" id="reg-confirm" placeholder="Confirm Password">
           <button class="submit-btn" onclick="doRegister()">Create Account</button>
@@ -149,6 +150,7 @@
     </div>
   </div>
 
+  <script src="api.js"></script>
   <script>
     // ── check if already logged in ──
     if(localStorage.getItem('zen_user')){
@@ -173,41 +175,27 @@
       document.getElementById('flash').className = 'flash-msg';
     }
 
-    function doLogin(){
+    async function doLogin(){
       const username = document.getElementById('login-user').value.trim();
       const password = document.getElementById('login-pass').value;
 
       if(!username || !password){ showFlash('Please fill in all fields.'); return; }
 
-      // get stored users
-      const users = JSON.parse(localStorage.getItem('zen_users') || '{}');
-
-      if(!users[username]){ showFlash('Username not found.'); return; }
-      if(users[username] !== password){ showFlash('Wrong password.'); return; }
-
-      // save session
-      localStorage.setItem('zen_user', username);
-      window.location.href = 'dashboard.html';
+      try { await ZenAPI.login(username, password); window.location.href = 'dashboard.html'; }
+      catch (error) { showFlash(error.message === 'email_not_verified' ? 'Please verify your email first.' : 'Invalid username or password.'); }
     }
 
-    function doRegister(){
+    async function doRegister(){
       const username = document.getElementById('reg-user').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-pass').value;
       const confirm  = document.getElementById('reg-confirm').value;
 
-      if(!username || !password || !confirm){ showFlash('Please fill in all fields.'); return; }
+      if(!username || !email || !password || !confirm){ showFlash('Please fill in all fields.'); return; }
       if(password !== confirm){ showFlash('Passwords do not match.'); return; }
-      if(password.length < 4){ showFlash('Password too short (min 4 chars).'); return; }
-
-      const users = JSON.parse(localStorage.getItem('zen_users') || '{}');
-      if(users[username]){ showFlash('Username already taken.'); return; }
-
-      users[username] = password;
-      localStorage.setItem('zen_users', JSON.stringify(users));
-      localStorage.setItem('zen_user', username);
-
-      showFlash('Account created! Redirecting...', 'success');
-      setTimeout(()=> window.location.href = 'dashboard.html', 1000);
+      if(password.length < 12){ showFlash('Password must be at least 12 characters.'); return; }
+      try { await ZenAPI.register(username, email, password); showFlash('Account created! Check your email to verify it.', 'success'); }
+      catch (error) { showFlash(error.message === 'username_or_email_already_exists' ? 'Username or email already exists.' : 'Could not create account.'); }
     }
 
     // parallax

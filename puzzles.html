@@ -242,10 +242,8 @@ function toggleTheme(){
   localStorage.setItem('zenTheme',dark?'dark':'light');
 }
 function logout(){
-  localStorage.removeItem('zen_user');
-  window.location.href='index.html';
+  ZenAPI.logout().catch(()=>{}).finally(()=>{ window.location.href='index.html'; });
 }
-if(!localStorage.getItem('zen_user')) window.location.href='index.html';
 
 // NAV
 function openGame(name){

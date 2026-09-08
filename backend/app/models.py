@@ -28,6 +28,15 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
 
+class PasswordResetToken(db.Model):
+    __tablename__ = "password_reset_tokens"
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    used_at = db.Column(db.DateTime(timezone=True))
+
+
 class Profile(db.Model):
     __tablename__ = "profiles"
     profile_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -62,3 +71,40 @@ class MoodEntry(db.Model):
     sleep_hours = db.Column(db.Float)
     productivity_score = db.Column(db.Integer)
     entry_date = db.Column(db.Date, nullable=False)
+
+
+class Post(db.Model):
+    __tablename__ = "posts"
+    post_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    journal_id = db.Column(db.String(36), db.ForeignKey("journals.journal_id", ondelete="SET NULL"), index=True)
+    caption = db.Column(db.Text)
+    visibility = db.Column(db.String(20), nullable=False, default="public")
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class Comment(db.Model):
+    __tablename__ = "comments"
+    comment_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    post_id = db.Column(db.String(36), db.ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    comment_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class Like(db.Model):
+    __tablename__ = "likes"
+    like_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    post_id = db.Column(db.String(36), db.ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    liked_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    __table_args__ = (db.UniqueConstraint("post_id", "user_id"),)
+
+
+class Follow(db.Model):
+    __tablename__ = "follows"
+    follow_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    follower_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    following_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    followed_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    __table_args__ = (db.UniqueConstraint("follower_id", "following_id"), db.CheckConstraint("follower_id <> following_id"))

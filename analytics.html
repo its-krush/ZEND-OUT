@@ -281,8 +281,8 @@
 <script src="auth-guard.js"></script>
 <script>
   // auth guard
-  const currentUser = localStorage.getItem('zen_user');
-  if(!currentUser) window.location.href = 'index.html';
+  let currentUser = '';
+  ZenAuthReady.then(profile => { currentUser = profile.username; });
 
   // theme
   document.getElementById('theme-toggle').checked = localStorage.getItem('zenTheme') === 'dark';
@@ -291,7 +291,7 @@
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     localStorage.setItem('zenTheme', dark ? 'dark' : 'light');
   }
-  function logout(){ localStorage.removeItem('zen_user'); window.location.href='index.html'; }
+  function logout(){ ZenAPI.logout().catch(()=>{}).finally(()=>{ window.location.href='index.html'; }); }
 
   // ── PUZZLE SCORES ──
   const arrow  = localStorage.getItem('hs_arrow');
@@ -352,28 +352,19 @@
   }
 
   // ── JOURNAL STATS ──
-  const entries = JSON.parse(localStorage.getItem('zen_entries')||'[]')
-                    .filter(e => e.user === currentUser);
-  const pubEntries  = entries.filter(e => e.isPublic);
-  const privEntries = entries.filter(e => !e.isPublic);
-
-  document.getElementById('j-total').textContent   = entries.length;
-  document.getElementById('j-public').textContent  = pubEntries.length;
-  document.getElementById('j-private').textContent = privEntries.length;
-
-  // best entry = most recently written public one (since we don't have likes yet)
-  const bestWrap = document.getElementById('best-entry-wrap');
-  if(pubEntries.length > 0){
-    const best = pubEntries[pubEntries.length - 1];
-    bestWrap.innerHTML = `
-      <div class="best-entry-label">⭐ Latest Public Entry</div>
-      <div class="best-entry">
-        <div class="best-entry-title">${best.title}</div>
-        <div class="best-entry-preview">${best.content}</div>
-      </div>`;
-  } else {
-    bestWrap.innerHTML = '<div class="empty-note">No public entries yet.</div>';
-  }
+  ZenAuthReady.then(async () => {
+    const entries = await ZenAPI.listJournals();
+    const pubEntries  = entries.filter(e => e.isPublic);
+    const privEntries = entries.filter(e => !e.isPublic);
+    document.getElementById('j-total').textContent   = entries.length;
+    document.getElementById('j-public').textContent  = pubEntries.length;
+    document.getElementById('j-private').textContent = privEntries.length;
+    const bestWrap = document.getElementById('best-entry-wrap');
+    if(pubEntries.length > 0){
+      const best = pubEntries[0];
+      bestWrap.innerHTML = `<div class="best-entry-label">⭐ Latest Public Entry</div><div class="best-entry"><div class="best-entry-title">${best.title}</div><div class="best-entry-preview">${best.content}</div></div>`;
+    } else bestWrap.innerHTML = '<div class="empty-note">No public entries yet.</div>';
+  }).catch(() => {});
 
   // ── WORDLE PROGRESS ──
   const streak     = parseInt(localStorage.getItem('wordle_streak'))||0;

@@ -197,8 +197,8 @@
 <script src="api.js"></script>
 <script>
   // ── auth guard ──
-  let user = localStorage.getItem('zen_user') || '';
-  ZenAPI.me().then((profile) => {
+  let user = '';
+  ZenAuthReady.then((profile) => {
     user = profile.username;
     document.getElementById('nav-username').textContent = '👤 ' + user;
     document.getElementById('greeting').textContent = `Hey, ${user}! 👋`;
@@ -217,7 +217,6 @@
   // ── logout ──
   async function logout(){
     await ZenAPI.logout().catch(() => {});
-    localStorage.removeItem('zen_user');
     window.location.href = 'index.html';
   }
 

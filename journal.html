@@ -299,8 +299,9 @@
 <script src="auth-guard.js"></script>
 <script>
   // ── auth guard ──
-  const currentUser = localStorage.getItem('zen_user');
-  if(!currentUser) window.location.href = 'index.html';
+  let currentUser = '';
+  let entriesCache = [];
+  ZenAuthReady.then(async profile => { currentUser = profile.username; await renderEntries(); });
 
   // ── theme ──
   const toggle = document.getElementById('theme-toggle');
@@ -332,7 +333,7 @@
   let editingId = null;
 
   // ── save entry ──
-  function saveEntry(){
+  async function saveEntry(){
     const title   = document.getElementById('entry-title').value.trim();
     const content = document.getElementById('main-editor').value.trim();
     const isPublic = document.getElementById('is-public').checked;
@@ -340,25 +341,15 @@
     if(!title){ showToast('Please add a title!'); return; }
     if(!content){ showToast('Entry is empty!'); return; }
 
-    const entries = getEntries();
-
-    if(editingId !== null){
-      const idx = entries.findIndex(e => e.id === editingId);
-      if(idx !== -1){
-        entries[idx] = { ...entries[idx], title, content, isPublic, mood: activeMood };
+    try {
+      if(editingId !== null){
+        await ZenAPI.updateJournal(editingId, { title, content, visibility: isPublic ? 'public' : 'private' });
+        editingId = null;
+      } else {
+        await ZenAPI.createJournal({ title, content, visibility: isPublic ? 'public' : 'private' });
       }
-      editingId = null;
-    } else {
-      entries.push({
-        id:       Date.now(),
-        user:     currentUser,
-        title, content, isPublic,
-        mood:     activeMood,
-        date:     new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
-      });
-    }
-
-    saveEntries(entries);
+      await renderEntries();
+    } catch (_) { showToast('Could not save entry.'); return; }
     document.getElementById('entry-title').value = '';
     document.getElementById('main-editor').value = '';
     document.getElementById('is-public').checked = false;
@@ -366,13 +357,9 @@
     showToast('Entry saved! ✨');
   }
 
-  // ── localStorage helpers ──
-  function getEntries(){
-    return JSON.parse(localStorage.getItem('zen_entries') || '[]');
-  }
-  function saveEntries(arr){
-    localStorage.setItem('zen_entries', JSON.stringify(arr));
-  }
+  // ── server persistence ──
+  async function loadEntries(){ entriesCache = await ZenAPI.listJournals(); return entriesCache; }
+  function getEntries(){ return entriesCache; }
 
   // ── library ──
   let libFilter = 'all';
@@ -398,9 +385,9 @@
     renderEntries();
   }
 
-  function renderEntries(){
+  async function renderEntries(){
     const grid = document.getElementById('entries-grid');
-    let entries = getEntries().filter(e => e.user === currentUser);
+    let entries = await loadEntries();
 
     if(libFilter === 'public')  entries = entries.filter(e => e.isPublic);
     if(libFilter === 'private') entries = entries.filter(e => !e.isPublic);
@@ -439,11 +426,10 @@
     showWrite();
   }
 
-  function deleteEntry(id){
+  async function deleteEntry(id){
     if(!confirm('Delete this entry?')) return;
-    saveEntries(getEntries().filter(e => e.id !== id));
-    renderEntries();
-    showToast('Entry deleted.');
+    try { await ZenAPI.deleteJournal(id); await renderEntries(); showToast('Entry deleted.'); }
+    catch (_) { showToast('Could not delete entry.'); }
   }
 
   // ── toast ──
@@ -454,8 +440,8 @@
   }
 
   // ── logout ──
-  function logout(){
-    localStorage.removeItem('zen_user');
+  async function logout(){
+    await ZenAPI.logout().catch(() => {});
     window.location.href = 'index.html';
   }
 </script>

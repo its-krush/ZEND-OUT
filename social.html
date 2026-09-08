@@ -275,8 +275,9 @@
 <script src="api.js"></script>
 <script src="auth-guard.js"></script>
 <script>
-  const me = localStorage.getItem('zen_user');
-  if(!me) window.location.href = 'index.html';
+  let me = '';
+  let socialEntries = [], socialUsers = [], socialFollowing = new Set(), socialLikes = new Set(), socialComments = {}, socialCommentCounts = {};
+  ZenAuthReady.then(async profile => { me = profile.username; await loadSocialData(); renderFeed(); });
 
   document.getElementById('theme-toggle').checked = localStorage.getItem('zenTheme')==='dark';
   function toggleTheme(){
@@ -284,7 +285,7 @@
     document.documentElement.setAttribute('data-theme',dark?'dark':'light');
     localStorage.setItem('zenTheme',dark?'dark':'light');
   }
-  function logout(){ localStorage.removeItem('zen_user'); window.location.href='index.html'; }
+  function logout(){ ZenAPI.logout().catch(()=>{}).finally(()=>{ window.location.href='index.html'; }); }
 
   // ── TAB SWITCH ──
   function switchTab(name){
@@ -298,82 +299,44 @@
     if(name==='following') renderFollowing();
   }
 
-  // ── STORAGE HELPERS ──
-  function getAllEntries(){ return JSON.parse(localStorage.getItem('zen_entries')||'[]'); }
-  function saveEntries(arr){ localStorage.setItem('zen_entries',JSON.stringify(arr)); }
-  function getAllUsers(){ return Object.keys(JSON.parse(localStorage.getItem('zen_users')||'{}')).filter(u=>u!==me); }
-  function getFollowing(){ return JSON.parse(localStorage.getItem('zen_following_'+me)||'[]'); }
-  function saveFollowing(arr){ localStorage.setItem('zen_following_'+me,JSON.stringify(arr)); }
-  function getLikes(){ return JSON.parse(localStorage.getItem('zen_likes_'+me)||'[]'); }
-  function saveLikes(arr){ localStorage.setItem('zen_likes_'+me,JSON.stringify(arr)); }
-  function getReposts(){ return JSON.parse(localStorage.getItem('zen_reposts_'+me)||'[]'); }
-  function saveReposts(arr){ localStorage.setItem('zen_reposts_'+me,JSON.stringify(arr)); }
-  function getComments(entryId){ return JSON.parse(localStorage.getItem('zen_comments_'+entryId)||'[]'); }
-  function saveComments(entryId,arr){ localStorage.setItem('zen_comments_'+entryId,JSON.stringify(arr)); }
-
-  function isFollowing(user){ return getFollowing().includes(user); }
-  function isLiked(id){ return getLikes().includes(id); }
-  function isReposted(id){ return getReposts().includes(id); }
-
-  function getLikeCount(entryId){
-    let total=0;
-    Object.keys(JSON.parse(localStorage.getItem('zen_users')||'{}')).forEach(u=>{
-      if(JSON.parse(localStorage.getItem('zen_likes_'+u)||'[]').includes(entryId)) total++;
-    });
-    return total;
+  // ── SERVER DATA ──
+  async function loadSocialData(){
+    socialEntries = await ZenAPI.socialFeed();
+    socialUsers = await ZenAPI.socialUsers();
+    socialFollowing = new Set(socialUsers.filter(u=>u.following).map(u=>u.username));
+    socialCommentCounts = Object.fromEntries(socialEntries.map(e=>[e.id,e.comment_count]));
   }
-  function getCommentCount(entryId){ return getComments(entryId).length; }
-  function getRepostCount(entryId){
-    let total=0;
-    Object.keys(JSON.parse(localStorage.getItem('zen_users')||'{}')).forEach(u=>{
-      if(JSON.parse(localStorage.getItem('zen_reposts_'+u)||'[]').includes(entryId)) total++;
-    });
-    return total;
-  }
-
+  function getAllEntries(){ return socialEntries; }
+  function getAllUsers(){ return socialUsers.map(u=>u.username); }
+  function getFollowing(){ return [...socialFollowing]; }
+  function getLikes(){ return [...socialLikes]; }
+  function getReposts(){ return []; }
+  function getComments(entryId){ return socialComments[entryId] || []; }
+  function isFollowing(user){ return socialFollowing.has(user); }
+  function isLiked(id){ return socialLikes.has(id); }
+  function isReposted(){ return false; }
+  function getLikeCount(entryId){ return socialEntries.find(e=>e.id===entryId)?.like_count || 0; }
+  function getCommentCount(entryId){ return socialCommentCounts[entryId] || 0; }
+  function getRepostCount(){ return 0; }
   // ── ACTIONS ──
-  function toggleFollow(user){
-    const f=getFollowing(), idx=f.indexOf(user);
-    if(idx===-1){ f.push(user); showToast('Following '+user+' 🎉'); }
-    else        { f.splice(idx,1); showToast('Unfollowed '+user); }
-    saveFollowing(f); renderExplore();
+  async function toggleFollow(user){
+    try { await ZenAPI.toggleFollow(user); await loadSocialData(); renderExplore(); }
+    catch (_) { showToast('Could not update following.'); }
   }
 
-  function toggleLike(entryId, btn){
-    const likes=getLikes(), idx=likes.indexOf(entryId);
-    if(idx===-1) likes.push(entryId);
-    else         likes.splice(idx,1);
-    saveLikes(likes);
-    const liked=likes.includes(entryId);
-    const count=getLikeCount(entryId);
-    btn.className='heart-btn'+(liked?' liked':'');
-    btn.innerHTML=`<span class="heart-icon">${liked?'❤️':'🤍'}</span> ${count}`;
+  async function toggleLike(entryId, btn){
+    try { const result=await ZenAPI.toggleLike(entryId); if(result.liked) socialLikes.add(entryId); else socialLikes.delete(entryId); btn.className='heart-btn'+(result.liked?' liked':''); btn.innerHTML=`<span class="heart-icon">${result.liked?'❤️':'🤍'}</span> ${result.count}`; }
+    catch (_) { showToast('Could not update like.'); }
   }
 
   function toggleRepost(entryId, btn){
-    const reposts=getReposts(), idx=reposts.indexOf(entryId);
-    if(idx===-1){
-      reposts.push(entryId);
-      showToast('Reposted to your feed! 🔁');
-    } else {
-      reposts.splice(idx,1);
-      showToast('Repost removed.');
-    }
-    saveReposts(reposts);
-    const reposted=reposts.includes(entryId);
-    const count=getRepostCount(entryId);
-    btn.className='repost-btn'+(reposted?' reposted':'');
-    btn.innerHTML=`🔁 ${count}`;
-    // re-render feed to show/hide repost
-    const activeTab=document.querySelector('.s-tab.active');
-    if(activeTab && activeTab.textContent.includes('Feed')) renderFeed();
-    if(activeTab && activeTab.textContent.includes('Following')) renderFollowing();
+    showToast('Reposts are not enabled in the server API yet.');
   }
 
   // ── COMMENT MODAL ──
   let activeEntryId = null;
 
-  function openComments(entryId){
+  async function openComments(entryId){
     activeEntryId = entryId;
     const entries = getAllEntries();
     const entry   = entries.find(e=>e.id===entryId);
@@ -384,6 +347,7 @@
       <div class="modal-post-title">${entry.title}</div>
       <div class="modal-post-body">${entry.content}</div>`;
 
+    socialComments[entryId] = await ZenAPI.listComments(entryId);
     renderComments(entryId);
     document.getElementById('modal-overlay').classList.add('open');
     setTimeout(()=>document.getElementById('comment-input').focus(), 300);
@@ -407,13 +371,13 @@
     list.scrollTop = list.scrollHeight;
   }
 
-  function submitComment(){
+  async function submitComment(){
     const input = document.getElementById('comment-input');
     const text  = input.value.trim();
     if(!text) return;
+    await ZenAPI.createComment(activeEntryId, text);
+    socialComments[activeEntryId] = await ZenAPI.listComments(activeEntryId);
     const comments = getComments(activeEntryId);
-    comments.push({ user:me, text, date:new Date().toLocaleDateString() });
-    saveComments(activeEntryId, comments);
     input.value = '';
     renderComments(activeEntryId);
     // update comment count on card
@@ -481,25 +445,16 @@
   }
 
   // ── RENDER FEED ──
-  function renderFeed(){
+  async function renderFeed(){
     const list=document.getElementById('feed-list');
     list.innerHTML='';
 
-    // collect public entries + reposts
+    // collect public server-backed entries
     let items=[];
 
     // all public entries
     getAllEntries().filter(e=>e.isPublic).forEach(e=>{
       items.push({ entry:e, repostedBy:null, date:e.date||'' });
-    });
-
-    // reposts by current user
-    const myReposts=getReposts();
-    getAllEntries().filter(e=>e.isPublic&&myReposts.includes(e.id)&&e.user!==me).forEach(e=>{
-      // only add if not already in feed
-      if(!items.find(i=>i.entry.id===e.id&&i.repostedBy===me)){
-        items.push({ entry:e, repostedBy:me, date:e.date||'' });
-      }
     });
 
     items=items.reverse();
@@ -564,7 +519,7 @@
   }
 
   // ── INIT ──
-  renderFeed();
+  // Initial render occurs after the authenticated server data is loaded above.
 
   // screen time
   const pageStart=Date.now();

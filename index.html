@@ -107,6 +107,10 @@
     }
     .flash-msg.show { display: block; }
     .flash-msg.success { background: rgba(16,185,129,0.1); color: #059669; }
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 58px; }
+    .password-toggle { position:absolute; right:8px; top:10px; border:0; background:transparent; color:#6060f4; cursor:pointer; font-size:0.72rem; font-weight:700; }
+    .text-link { border:0; background:transparent; color:#6060f4; cursor:pointer; font-size:0.76rem; margin:8px auto 0; }
   </style>
 </head>
 <body>
@@ -134,17 +138,23 @@
         <!-- LOGIN -->
         <div class="form-panel active" id="login-form">
           <input type="text"     id="login-user" placeholder="Username">
-          <input type="password" id="login-pass" placeholder="Password">
+          <div class="password-wrap"><input type="password" id="login-pass" placeholder="Password"><button type="button" class="password-toggle" onclick="togglePassword('login-pass',this)">Show</button></div>
           <button class="submit-btn" onclick="doLogin()">Login</button>
+          <button type="button" class="text-link" onclick="showReset()">Forgot password?</button>
         </div>
 
         <!-- REGISTER -->
         <div class="form-panel" id="register-form">
           <input type="text"     id="reg-user"    placeholder="Username">
           <input type="email"    id="reg-email"   placeholder="Email">
-          <input type="password" id="reg-pass"    placeholder="Password">
-          <input type="password" id="reg-confirm" placeholder="Confirm Password">
+          <div class="password-wrap"><input type="password" id="reg-pass"    placeholder="Password"><button type="button" class="password-toggle" onclick="togglePassword('reg-pass',this)">Show</button></div>
+          <div class="password-wrap"><input type="password" id="reg-confirm" placeholder="Confirm Password"><button type="button" class="password-toggle" onclick="togglePassword('reg-confirm',this)">Show</button></div>
           <button class="submit-btn" onclick="doRegister()">Create Account</button>
+        </div>
+        <div class="form-panel" id="reset-form">
+          <input type="email" id="reset-email" placeholder="Email">
+          <button class="submit-btn" onclick="requestReset()">Send Reset Link</button>
+          <button type="button" class="text-link" onclick="switchTab('login')">Back to Login</button>
         </div>
       </div>
     </div>
@@ -152,17 +162,13 @@
 
   <script src="api.js"></script>
   <script>
-    // ── check if already logged in ──
-    if(localStorage.getItem('zen_user')){
-      window.location.href = 'dashboard.html';
-    }
-
     function switchTab(tab){
       document.querySelectorAll('.tab').forEach((t,i)=>{
         t.classList.toggle('active', (i===0)===(tab==='login'));
       });
       document.getElementById('login-form').classList.toggle('active', tab==='login');
       document.getElementById('register-form').classList.toggle('active', tab==='register');
+      document.getElementById('reset-form').classList.toggle('active', tab==='reset');
       hideFlash();
     }
 
@@ -173,6 +179,12 @@
     }
     function hideFlash(){
       document.getElementById('flash').className = 'flash-msg';
+    }
+    function showReset(){ switchTab('reset'); }
+    function togglePassword(id, button){
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      button.textContent = input.type === 'password' ? 'Show' : 'Hide';
     }
 
     async function doLogin(){
@@ -196,6 +208,13 @@
       if(password.length < 12){ showFlash('Password must be at least 12 characters.'); return; }
       try { await ZenAPI.register(username, email, password); showFlash('Account created! Check your email to verify it.', 'success'); }
       catch (error) { showFlash(error.message === 'username_or_email_already_exists' ? 'Username or email already exists.' : 'Could not create account.'); }
+    }
+
+    async function requestReset(){
+      const email = document.getElementById('reset-email').value.trim();
+      if(!email){ showFlash('Please enter your email.'); return; }
+      try { const result = await ZenAPI.forgotPassword(email); showFlash(result.message, 'success'); }
+      catch (_) { showFlash('Unable to process the request right now.'); }
     }
 
     // parallax

@@ -33,9 +33,15 @@ window.ZenAPI = (() => {
     socialUsers: () => request('/social/users'),
     toggleFollow: (username) => request(`/social/follow/${encodeURIComponent(username)}`, { method: 'POST' }),
     toggleLike: (postId) => request(`/social/posts/${encodeURIComponent(postId)}/like`, { method: 'POST' }),
+    toggleRepost: (postId) => request(`/social/posts/${encodeURIComponent(postId)}/repost`, { method: 'POST' }),
     listComments: (postId) => request(`/social/posts/${encodeURIComponent(postId)}/comments`),
     createComment: (postId, text) => request(`/social/posts/${encodeURIComponent(postId)}/comments`, { method: 'POST', body: JSON.stringify({ text }) }),
+    recordPuzzle: (result) => request('/activity/puzzles', { method: 'POST', body: JSON.stringify(result) }),
+    analytics: () => request('/analytics'),
+    recordScreenTime: (page_name, seconds) => request('/analytics/screen-time', { method: 'POST', body: JSON.stringify({ page_name, seconds }) }),
     logout: () => request('/auth/logout', { method: 'POST' }),
     me: () => request('/auth/me'),
   };
 })();
+
+window.escapeHTML = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[character]));

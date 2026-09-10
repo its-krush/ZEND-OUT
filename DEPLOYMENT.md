@@ -1,0 +1,38 @@
+# Deployment
+
+The backend is deployable as a Flask WSGI service with Gunicorn. Set the following deployment secrets and environment variables; never commit `.env` or paste real values into HTML/JavaScript:
+
+```env
+FLASK_ENV=production
+SECRET_KEY=<long-random-secret>
+DATABASE_URL=postgresql+psyc://<user>:<password>@<host>:5432/<database>
+FRONTEND_ORIGINS=https://your-frontend.example
+FRONTEND_BASE_URL=https://your-frontend.example
+SESSION_COOKIE_SECURE=true
+EMAIL_VERIFICATION_REQUIRED=true
+MAIL_SERVER=<smtp-host>
+MAIL_PORT=587
+MAIL_USERNAME=<smtp-user>
+MAIL_PASSWORD=<smtp-password>
+MAIL_DEFAULT_SENDER=no-reply@your-domain.example
+```
+
+Deploy the `backend/` service with the included `Procfile` or equivalent command:
+
+```bash
+cd backend
+gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app
+```
+
+Serve the static HTML files from the same origin or configure a reverse proxy so `/api` routes to Flask. If the frontend is hosted separately, set `window.ZEN_API_BASE` before loading `api.js` and list the exact frontend origin in `FRONTEND_ORIGINS`.
+
+Apply migrations manually, in order, to the intended development or production database using a migration approval process:
+
+```bash
+psql "$DATABASE_URL" -f backend/migrations/001_initial.sql
+psql "$DATABASE_URL" -f backend/migrations/002_password_reset_tokens.sql
+psql "$DATABASE_URL" -f backend/migrations/003_social.sql
+psql "$DATABASE_URL" -f backend/migrations/004_user_activity.sql
+```
+
+These migrations are additive. Do not use `db.drop_all()`, do not reset the database, and do not run production migrations automatically from application startup. Ensure the platform provides HTTPS, PostgreSQL backups, restricted database network access, and SMTP credentials through its secret manager.

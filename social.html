@@ -276,7 +276,7 @@
 <script src="auth-guard.js"></script>
 <script>
   let me = '';
-  let socialEntries = [], socialUsers = [], socialFollowing = new Set(), socialLikes = new Set(), socialComments = {}, socialCommentCounts = {};
+  let socialEntries = [], socialUsers = [], socialFollowing = new Set(), socialLikes = new Set(), socialReposts = new Set(), socialComments = {}, socialCommentCounts = {};
   ZenAuthReady.then(async profile => { me = profile.username; await loadSocialData(); renderFeed(); });
 
   document.getElementById('theme-toggle').checked = localStorage.getItem('zenTheme')==='dark';
@@ -304,20 +304,22 @@
     socialEntries = await ZenAPI.socialFeed();
     socialUsers = await ZenAPI.socialUsers();
     socialFollowing = new Set(socialUsers.filter(u=>u.following).map(u=>u.username));
+    socialLikes = new Set(socialEntries.filter(e=>e.liked).map(e=>e.id));
+    socialReposts = new Set(socialEntries.filter(e=>e.reposted).map(e=>e.id));
     socialCommentCounts = Object.fromEntries(socialEntries.map(e=>[e.id,e.comment_count]));
   }
   function getAllEntries(){ return socialEntries; }
   function getAllUsers(){ return socialUsers.map(u=>u.username); }
   function getFollowing(){ return [...socialFollowing]; }
   function getLikes(){ return [...socialLikes]; }
-  function getReposts(){ return []; }
+  function getReposts(){ return [...socialReposts]; }
   function getComments(entryId){ return socialComments[entryId] || []; }
   function isFollowing(user){ return socialFollowing.has(user); }
   function isLiked(id){ return socialLikes.has(id); }
-  function isReposted(){ return false; }
+  function isReposted(id){ return socialReposts.has(id); }
   function getLikeCount(entryId){ return socialEntries.find(e=>e.id===entryId)?.like_count || 0; }
   function getCommentCount(entryId){ return socialCommentCounts[entryId] || 0; }
-  function getRepostCount(){ return 0; }
+  function getRepostCount(entryId){ return socialEntries.find(e=>e.id===entryId)?.repost_count || 0; }
   // ── ACTIONS ──
   async function toggleFollow(user){
     try { await ZenAPI.toggleFollow(user); await loadSocialData(); renderExplore(); }
@@ -329,8 +331,9 @@
     catch (_) { showToast('Could not update like.'); }
   }
 
-  function toggleRepost(entryId, btn){
-    showToast('Reposts are not enabled in the server API yet.');
+  async function toggleRepost(entryId, btn){
+    try { const result=await ZenAPI.toggleRepost(entryId); if(result.reposted) socialReposts.add(entryId); else socialReposts.delete(entryId); btn.className='repost-btn'+(result.reposted?' reposted':''); btn.innerHTML=`🔁 ${result.count}`; }
+    catch (_) { showToast('Could not update repost.'); }
   }
 
   // ── COMMENT MODAL ──
@@ -343,9 +346,9 @@
     if(!entry) return;
 
     document.getElementById('modal-post').innerHTML = `
-      <div class="modal-post-author">✍️ ${entry.user}</div>
-      <div class="modal-post-title">${entry.title}</div>
-      <div class="modal-post-body">${entry.content}</div>`;
+      <div class="modal-post-author">✍️ ${escapeHTML(entry.user)}</div>
+      <div class="modal-post-title">${escapeHTML(entry.title)}</div>
+      <div class="modal-post-body">${escapeHTML(entry.content)}</div>`;
 
     socialComments[entryId] = await ZenAPI.listComments(entryId);
     renderComments(entryId);
@@ -362,10 +365,10 @@
     }
     list.innerHTML = comments.map(c=>`
       <div class="comment-item">
-        <div class="c-avatar">${c.user.charAt(0).toUpperCase()}</div>
+        <div class="c-avatar">${escapeHTML(c.user.charAt(0).toUpperCase())}</div>
         <div class="c-bubble">
-          <div class="c-author">${c.user}</div>
-          <div class="c-text">${c.text}</div>
+          <div class="c-author">${escapeHTML(c.user)}</div>
+          <div class="c-text">${escapeHTML(c.text)}</div>
         </div>
       </div>`).join('');
     list.scrollTop = list.scrollHeight;
@@ -411,26 +414,26 @@
       ${repostedBy ? `<div class="repost-tag">🔁 Reposted by ${repostedBy}</div>` : ''}
       <div class="post-header">
         <div class="post-author">
-          <div class="author-avatar">${entry.user.charAt(0).toUpperCase()}</div>
+          <div class="author-avatar">${escapeHTML(entry.user.charAt(0).toUpperCase())}</div>
           <div>
-            <div class="author-name">${entry.user}</div>
+            <div class="author-name">${escapeHTML(entry.user)}</div>
             <div class="author-date">${entry.date||''}</div>
           </div>
         </div>
         ${!isMe
-          ? `<button class="follow-chip ${following?'following':''}" onclick="quickFollow('${entry.user}',this)">${following?'✓ Following':'+ Follow'}</button>`
+          ? `<button class="follow-chip ${following?'following':''}" onclick="quickFollow('${escapeHTML(entry.user)}',this)">${following?'✓ Following':'+ Follow'}</button>`
           : '<span style="font-size:0.75rem;opacity:0.4;">You</span>'}
       </div>
-      <div class="post-title">${entry.title}</div>
-      <div class="post-body">${entry.content}</div>
+      <div class="post-title">${escapeHTML(entry.title)}</div>
+      <div class="post-body">${escapeHTML(entry.content)}</div>
       <div class="post-footer">
-        <button class="heart-btn ${liked?'liked':''}" onclick="toggleLike(${entry.id},this)">
+        <button class="heart-btn ${liked?'liked':''}" onclick="toggleLike('${entry.id}',this)">
           <span class="heart-icon">${liked?'❤️':'🤍'}</span> ${likeCount}
         </button>
-        <button class="comment-btn" data-comment-id="${entry.id}" onclick="openComments(${entry.id})">
+        <button class="comment-btn" data-comment-id="${entry.id}" onclick="openComments('${entry.id}')">
           💬 ${cmtCount}
         </button>
-        <button class="repost-btn ${reposted?'reposted':''}" onclick="toggleRepost(${entry.id},this)">
+        <button class="repost-btn ${reposted?'reposted':''}" onclick="toggleRepost('${entry.id}',this)">
           🔁 ${rpostCount}
         </button>
       </div>`;

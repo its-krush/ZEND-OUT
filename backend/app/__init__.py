@@ -39,8 +39,9 @@ def create_app(test_config=None):
     def too_large(_):
         return jsonify(error="request_too_large"), 413
 
-    with app.app_context():
-        db.create_all()
+    if os.environ.get("AUTO_CREATE_DB", "true").lower() == "true" and os.environ.get("FLASK_ENV", "development") != "production":
+        with app.app_context():
+            db.create_all()
     return app
 
 

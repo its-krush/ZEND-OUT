@@ -81,6 +81,9 @@
   .num-btn{width:40px;height:40px;border-radius:12px;border:none;background:var(--soft);color:var(--text);font-weight:900;font-size:1rem;cursor:pointer;transition:0.2s;}
   .num-btn:hover{background:var(--accent);color:white;}
   .sudoku-actions{display:flex;gap:10px;justify-content:center;}
+  .sudoku-options{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:14px;font-weight:800;font-size:.82rem;color:var(--text)}
+  .sudoku-options select{border:1px solid var(--accent);border-radius:14px;padding:8px 12px;background:var(--card);color:var(--text);font:inherit;font-weight:800}
+  .sudoku-meta{text-align:center;color:var(--accent);font-weight:900;font-size:.82rem;margin-bottom:12px}
   .s-action-btn{padding:10px 22px;border-radius:18px;border:none;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.82rem;cursor:pointer;transition:0.3s;}
   .s-new{background:var(--accent);color:white;}.s-clear{background:var(--soft);color:var(--text);}
   .s-action-btn:hover{filter:brightness(1.1);transform:translateY(-2px);}
@@ -90,6 +93,7 @@
   .ttt-cell{aspect-ratio:1;border-radius:20px;background:var(--soft);border:none;font-size:2.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.2s;}
   .ttt-cell:hover:not(.taken){background:rgba(96,96,244,0.15);transform:scale(1.05);}
   .ttt-cell.taken{cursor:default;}.ttt-cell.win{background:rgba(16,185,129,0.25);}
+  [data-theme="dark"] .ttt-cell{color:#fff;border:1px solid rgba(255,255,255,.35)}
   #ttt-status{text-align:center;font-weight:900;font-size:1.1rem;color:var(--accent);margin-bottom:16px;min-height:28px;}
   #ttt-reset{display:block;margin:0 auto;background:var(--accent);color:white;border:none;padding:12px 36px;border-radius:20px;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.9rem;cursor:pointer;transition:0.3s;}
   #ttt-reset:hover{filter:brightness(1.15);}
@@ -115,6 +119,7 @@
   .kb-key.absent{background:#64748b;color:white;}
   .kb-key.wide{min-width:56px;font-size:0.75rem;}
   #wordle-msg{text-align:center;font-weight:900;font-size:1rem;color:var(--accent);margin-bottom:14px;min-height:24px;}
+  .zen-modal{position:fixed;inset:0;background:rgba(3,7,18,.65);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:500;padding:20px}.zen-modal.open{display:flex}.zen-modal-card{background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.25);border-radius:28px;padding:30px;max-width:390px;width:100%;text-align:center;box-shadow:0 30px 100px rgba(0,0,0,.35)}.zen-modal-card h2{font-family:Righteous,cursive;color:var(--accent);margin-bottom:10px}.zen-modal-card p{opacity:.75;line-height:1.6;margin-bottom:20px}.zen-modal-actions{display:flex;gap:10px;justify-content:center}.zen-modal-actions button{border:0;border-radius:18px;padding:11px 22px;font:900 .82rem Nunito;cursor:pointer}.modal-primary{background:var(--accent);color:#fff}.modal-secondary{background:var(--soft);color:var(--text)}
 </style>
 </head>
 <body>
@@ -186,11 +191,13 @@
     <div class="score-box">Time: <span id="sudoku-timer">0:00</span></div>
   </div>
   <div class="game-wrap">
+    <div class="sudoku-options"><label for="sudoku-level">Level</label><select id="sudoku-level" onchange="newSudoku()"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></div>
+    <div class="sudoku-meta">Errors: <span id="sudoku-errors">0</span>/<span id="sudoku-error-limit">3</span> · Hints left: <span id="sudoku-hints">5</span></div>
     <div id="sudoku-grid"></div>
     <div class="sudoku-numpad" id="sudoku-numpad"></div>
     <div class="sudoku-actions">
       <button class="s-action-btn s-new" onclick="newSudoku()">New Puzzle</button>
-      <button class="s-action-btn s-clear" onclick="clearSudoku()">Clear</button>
+      <button class="s-action-btn s-clear" onclick="clearSudoku()">Clear</button><button class="s-action-btn s-clear" onclick="useSudokuHint()">Hint</button>
     </div>
   </div>
 </div>
@@ -227,6 +234,7 @@
   </div>
 </div>
 
+<div class="zen-modal" id="game-modal"><div class="zen-modal-card"><h2 id="modal-title">Well done</h2><p id="modal-message"></p><div class="zen-modal-actions"><button class="modal-primary" id="modal-retry">Retry</button><button class="modal-secondary" id="modal-exit">Exit</button></div></div></div>
 <script src="api.js"></script>
 <script src="auth-guard.js"></script>
 <script>
@@ -241,6 +249,10 @@ function toggleTheme(){
   document.documentElement.setAttribute('data-theme',dark?'dark':'light');
   localStorage.setItem('zenTheme',dark?'dark':'light');
 }
+function pkey(key){ return 'zen_puzzle_' + (window.ZenAuthenticatedUser?.user_id || 'guest') + '_' + key; }
+function pget(key){ return localStorage.getItem(pkey(key)); }
+function pset(key,value){ localStorage.setItem(pkey(key),value); }
+
 function logout(){
   ZenAPI.logout().catch(()=>{}).finally(()=>{ window.location.href='index.html'; });
 }
@@ -261,15 +273,27 @@ function goHome(){
   loadHighScores();
 }
 
+function openGameModal(title,message,retry,exit){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-message').textContent=message;
+  const modal=document.getElementById('game-modal'); modal.classList.add('open');
+  document.getElementById('modal-retry').onclick=()=>{modal.classList.remove('open');retry();};
+  document.getElementById('modal-exit').onclick=()=>{modal.classList.remove('open');exit();};
+}
+
 // HIGH SCORES
 function loadHighScores(){
-  document.getElementById('hs-arrow').textContent='Best: '+(localStorage.getItem('hs_arrow')||'—');
-  document.getElementById('hs-ttt').textContent='Wins: '+(localStorage.getItem('hs_ttt')||'—');
-  document.getElementById('hs-wordle').textContent='Streak: '+(localStorage.getItem('hs_wordle')||'—');
-  const st=localStorage.getItem('hs_sudoku');
+  document.getElementById('hs-arrow').textContent='Best: '+(pget('hs_arrow')||'—');
+  document.getElementById('hs-ttt').textContent='Wins: '+(pget('hs_ttt')||'—');
+  document.getElementById('hs-wordle').textContent='Streak: '+(pget('hs_wordle')||'—');
+  const st=pget('hs_sudoku');
   document.getElementById('hs-sudoku').textContent=st?'Best: '+Math.floor(st/60)+'m'+st%60+'s':'Best: —';
 }
 loadHighScores();
+ZenAPI.analytics().then(data=>{
+  const sudoku=data.puzzles?.sudoku;
+  if(sudoku) document.getElementById('hs-sudoku').textContent=`Solved: ${sudoku.solved} · Unsolved: ${sudoku.unsolved}`;
+}).catch(()=>{});
 
 // ══ ARROW MEMORY ══
 let arrowSeq=[],arrowIdx=0,arrowActive=false;
@@ -310,8 +334,8 @@ function arrowInput(dir){
     arrowIdx++;
     if(arrowIdx===arrowSeq.length){
       arrowActive=false;
-      const prev=parseInt(localStorage.getItem('hs_arrow'))||0;
-      if(arrowSeq.length>prev)localStorage.setItem('hs_arrow',arrowSeq.length);
+      const prev=parseInt(pget('hs_arrow'))||0;
+      if(arrowSeq.length>prev)pset('hs_arrow',arrowSeq.length);
       document.getElementById('arrow-status').textContent='✅ Correct! Get ready...';
       setTimeout(nextArrowRound,1200);
     }
@@ -326,7 +350,9 @@ function arrowInput(dir){
 
 // ══ SUDOKU (random generator) ══
 let sudokuBoard=[],sudokuSolved=[],sudokuGiven=[],sudokuSelected=null;
-let sudokuInterval=null,sudokuSeconds=0;
+let sudokuInterval=null,sudokuSeconds=0,sudokuErrors=0,sudokuHints=0,sudokuOver=false;
+const SUDOKU_RULES={easy:{empty:32,hints:7,errors:5},medium:{empty:45,hints:5,errors:4},hard:{empty:54,hints:3,errors:3}};
+function sudokuRule(){return SUDOKU_RULES[document.getElementById('sudoku-level').value]||SUDOKU_RULES.medium;}
 
 function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
 
@@ -368,9 +394,10 @@ function initSudoku(){newSudoku();}
 function newSudoku(){
   const sol=generateSudoku();
   sudokuSolved=[...sol];
-  sudokuBoard=makePuzzle(sol,40);
+  const rule=sudokuRule(); sudokuBoard=makePuzzle(sol,rule.empty);
   sudokuGiven=sudokuBoard.map(v=>v!==0);
-  sudokuSelected=null;
+  sudokuSelected=null;sudokuErrors=0;sudokuHints=rule.hints;sudokuOver=false;
+  document.getElementById('sudoku-errors').textContent='0'; document.getElementById('sudoku-error-limit').textContent=rule.errors; document.getElementById('sudoku-hints').textContent=sudokuHints;
   renderSudoku();startSudokuTimer();
 }
 function startSudokuTimer(){
@@ -408,29 +435,38 @@ function renderSudoku(){
   clr.onclick=()=>enterSudokuNum(0);pad.appendChild(clr);
 }
 function enterSudokuNum(n){
-  if(sudokuSelected===null||sudokuGiven[sudokuSelected])return;
+  if(sudokuOver||sudokuSelected===null||sudokuGiven[sudokuSelected])return;
+  if(n!==0&&n!==sudokuSolved[sudokuSelected]){ sudokuErrors++; document.getElementById('sudoku-errors').textContent=sudokuErrors; renderSudoku(); if(sudokuErrors>=sudokuRule().errors) finishSudoku(false,'Too many errors.'); return; }
   sudokuBoard[sudokuSelected]=n;renderSudoku();checkSudokuWin();
 }
 function clearSudoku(){
+  if(sudokuOver)return;
   sudokuBoard=sudokuBoard.map((v,i)=>sudokuGiven[i]?v:0);
   sudokuSelected=null;renderSudoku();
 }
+function useSudokuHint(){
+  if(sudokuOver||sudokuHints<=0)return;
+  const open=sudokuBoard.map((v,i)=>v===0?i:-1).filter(i=>i>=0); if(!open.length)return;
+  const i=open[Math.floor(Math.random()*open.length)]; sudokuBoard[i]=sudokuSolved[i]; sudokuHints--; document.getElementById('sudoku-hints').textContent=sudokuHints; renderSudoku(); checkSudokuWin();
+}
 function checkSudokuWin(){
   if(JSON.stringify(sudokuBoard)===JSON.stringify(sudokuSolved)){
-    clearInterval(sudokuInterval);
-    const prev=parseInt(localStorage.getItem('hs_sudoku'))||99999;
-    if(sudokuSeconds<prev)localStorage.setItem('hs_sudoku',sudokuSeconds);
-    setTimeout(()=>alert(`🎉 Solved in ${Math.floor(sudokuSeconds/60)}m ${sudokuSeconds%60}s!`),100);
+    finishSudoku(true,`Solved in ${Math.floor(sudokuSeconds/60)}m ${sudokuSeconds%60}s!`);
   }
+}
+function finishSudoku(solved,message){
+  if(sudokuOver)return; sudokuOver=true; clearInterval(sudokuInterval);
+  ZenAPI.recordPuzzle({puzzle_type:'sudoku',difficulty:document.getElementById('sudoku-level').value,status:solved?'solved':'unsolved',duration_seconds:sudokuSeconds,errors:sudokuErrors,hints_used:sudokuRule().hints-sudokuHints}).catch(()=>{});
+  openGameModal(solved?'Congratulations!':'Game over',message,()=>newSudoku(),()=>goHome());
 }
 
 // ══ TIC TAC TOE ══
 let tttBoard=Array(9).fill(''),tttActive=true,tttW=0,tttD=0,tttL=0;
 const WIN_LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 function initTTT(){
-  tttW=parseInt(localStorage.getItem('ttt_w'))||0;
-  tttD=parseInt(localStorage.getItem('ttt_d'))||0;
-  tttL=parseInt(localStorage.getItem('ttt_l'))||0;
+  tttW=parseInt(pget('ttt_w'))||0;
+  tttD=parseInt(pget('ttt_d'))||0;
+  tttL=parseInt(pget('ttt_l'))||0;
   updateTTTScores();resetTTT();
 }
 function updateTTTScores(){
@@ -490,11 +526,12 @@ function checkTTT(){
 }
 function endTTT(line,result){
   tttActive=false;renderTTT(line||[]);
-  if(result==='X'){tttW++;localStorage.setItem('hs_ttt',tttW);document.getElementById('ttt-status').textContent='🎉 You Win!';}
+  if(result==='X'){tttW++;pset('hs_ttt',tttW);document.getElementById('ttt-status').textContent='🎉 You Win!';}
   else if(result==='O'){tttL++;document.getElementById('ttt-status').textContent='😔 CPU Wins!';}
   else{tttD++;document.getElementById('ttt-status').textContent="🤝 It's a Draw!";}
-  localStorage.setItem('ttt_w',tttW);localStorage.setItem('ttt_d',tttD);localStorage.setItem('ttt_l',tttL);
+  pset('ttt_w',tttW);pset('ttt_d',tttD);pset('ttt_l',tttL);
   updateTTTScores();
+  ZenAPI.recordPuzzle({puzzle_type:'ttt',status:result==='X'?'solved':result==='O'?'unsolved':'game_over',duration_seconds:0}).catch(()=>{});
 }
 
 // ══ WORDLE (no repeats until all 70 words used) ══
@@ -503,14 +540,14 @@ const WORD_BANK=['CRANE','SLATE','TRACE','ADORE','BLAZE','CHARM','DREAM','EARTH'
 let wordleWord='',wordleGuesses=[],wordleCurrent='',wordleOver=false,wordleStreak=0;
 
 function getNextWord(){
-  let used=JSON.parse(localStorage.getItem('wordle_used')||'[]');
+  let used=JSON.parse(pget('wordle_used')||'[]');
   const remaining=WORD_BANK.filter(w=>!used.includes(w));
-  if(remaining.length===0){used=[];localStorage.setItem('wordle_used','[]');}
+  if(remaining.length===0){used=[];pset('wordle_used','[]');}
   const pool=remaining.length>0?remaining:WORD_BANK;
   return pool[Math.floor(Math.random()*pool.length)];
 }
 function initWordle(){
-  wordleStreak=parseInt(localStorage.getItem('wordle_streak'))||0;
+  wordleStreak=parseInt(pget('wordle_streak'))||0;
   document.getElementById('wordle-streak').textContent=wordleStreak;
   startWordle();
 }
@@ -578,25 +615,28 @@ document.addEventListener('keydown',e=>{
 });
 function wordleSubmit(){
   if(wordleCurrent.length!==5){document.getElementById('wordle-msg').textContent='Need 5 letters!';return;}
+  if(!WORD_BANK.includes(wordleCurrent)){document.getElementById('wordle-msg').textContent='That is not in the word list.';return;}
   const result=scoreGuess(wordleCurrent,wordleWord);
   wordleGuesses.push({word:wordleCurrent,result});
   // mark word used
-  const used=JSON.parse(localStorage.getItem('wordle_used')||'[]');
-  if(!used.includes(wordleWord)){used.push(wordleWord);localStorage.setItem('wordle_used',JSON.stringify(used));}
+  const used=JSON.parse(pget('wordle_used')||'[]');
+  if(!used.includes(wordleWord)){used.push(wordleWord);pset('wordle_used',JSON.stringify(used));}
   wordleCurrent='';
   renderWordleGrid();renderWordleKeyboard();
   if(result.every(r=>r==='correct')){
     wordleOver=true;wordleStreak++;
-    localStorage.setItem('wordle_streak',wordleStreak);
-    const best=parseInt(localStorage.getItem('hs_wordle'))||0;
-    if(wordleStreak>best)localStorage.setItem('hs_wordle',wordleStreak);
+    pset('wordle_streak',wordleStreak);
+    const best=parseInt(pget('hs_wordle'))||0;
+    if(wordleStreak>best)pset('hs_wordle',wordleStreak);
     document.getElementById('wordle-streak').textContent=wordleStreak;
     document.getElementById('wordle-msg').textContent=`🎉 Correct! The word was ${wordleWord}`;
-    setTimeout(()=>{if(confirm('Play next word?'))startWordle();},800);
+    ZenAPI.recordPuzzle({puzzle_type:'wordle',status:'solved',duration_seconds:0}).catch(()=>{});
+    openGameModal('Congratulations!',`You found ${wordleWord}.`,()=>startWordle(),()=>goHome());
   } else if(wordleGuesses.length===6){
-    wordleOver=true;wordleStreak=0;localStorage.setItem('wordle_streak',0);
+    wordleOver=true;wordleStreak=0;pset('wordle_streak',0);
     document.getElementById('wordle-msg').textContent=`❌ The word was ${wordleWord}`;
-    setTimeout(()=>{if(confirm('Try another word?'))startWordle();},800);
+    ZenAPI.recordPuzzle({puzzle_type:'wordle',status:'unsolved',duration_seconds:0}).catch(()=>{});
+    openGameModal('Game over',`The word was ${wordleWord}.`,()=>startWordle(),()=>goHome());
   }
 }
 function scoreGuess(guess,answer){

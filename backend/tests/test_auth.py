@@ -64,3 +64,19 @@ def test_journal_ownership_is_enforced(client):
     client.post("/api/auth/login", json={"identifier": "other", "password": "correct horse battery staple"})
     assert all(item["id"] != journal_id for item in client.get("/api/journals").get_json())
     assert client.delete(f"/api/journals/{journal_id}").status_code == 404
+
+
+def test_activity_analytics_is_user_scoped(client):
+    client.post("/api/auth/register", json={"username": "owner", "email": "owner@example.com", "password": "correct horse battery staple"})
+    client.post("/api/auth/login", json={"identifier": "owner", "password": "correct horse battery staple"})
+    assert client.post("/api/activity/puzzles", json={"puzzle_type": "sudoku", "status": "solved", "difficulty": "easy", "duration_seconds": 42}).status_code == 201
+    assert client.post("/api/analytics/screen-time", json={"page_name": "puzzles", "seconds": 12}).status_code == 200
+    owner_stats = client.get("/api/analytics").get_json()
+    assert owner_stats["puzzles"]["sudoku"]["solved"] == 1
+    assert owner_stats["screen_time"]["puzzles"] == 12
+    client.post("/api/auth/logout")
+    client.post("/api/auth/register", json={"username": "other", "email": "other@example.com", "password": "correct horse battery staple"})
+    client.post("/api/auth/login", json={"identifier": "other", "password": "correct horse battery staple"})
+    other_stats = client.get("/api/analytics").get_json()
+    assert other_stats["puzzles"] == {}
+    assert other_stats["screen_time"]["puzzles"] == 0

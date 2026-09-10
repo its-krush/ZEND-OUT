@@ -17,8 +17,8 @@ Passwords are stored as scrypt hashes, never plaintext. Registration requires a 
 
 ## Migrations
 
-Apply the migrations in order against the development database only: `001_initial.sql`, `002_password_reset_tokens.sql`, and `003_social.sql`. They are additive and do not drop or recreate existing tables. Do not run them against production automatically.
+Apply the migrations in order against the development database only: `001_initial.sql`, `002_password_reset_tokens.sql`, `003_social.sql`, and `004_user_activity.sql`. They are additive and do not drop or recreate existing tables. Do not run them against production automatically.
 
 ## Scope
 
-The API exposes health, registration, email verification, login, logout, password reset, current-user, journal CRUD, and social feed/follow/like/comment endpoints. `001_initial.sql` covers the supplied ER diagram's users, roles/permissions, journaling/moods, social, notifications, sessions, reports, habits, puzzles, challenges, achievements, and library tables; migrations 002 and 003 add the reset-token and server-backed social constraints used by this pass. The puzzle game score widgets and screen-time chart remain browser-local UI state and have not been falsely presented as PostgreSQL-backed; they are the next isolated migration area if cross-browser persistence is required.
+The API exposes health, registration, email verification, login, logout, password reset, current-user, journal CRUD, social feed/follow/like/comment/repost, puzzle activity, and analytics endpoints. `001_initial.sql` covers the supplied ER diagram's users, roles/permissions, journaling/moods, social, notifications, sessions, reports, habits, puzzles, challenges, achievements, and library tables; migrations 002–004 add reset-token, social constraints, puzzle attempts, reposts, and user-scoped screen-time records.

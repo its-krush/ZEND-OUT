@@ -108,3 +108,35 @@ class Follow(db.Model):
     following_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     followed_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
     __table_args__ = (db.UniqueConstraint("follower_id", "following_id"), db.CheckConstraint("follower_id <> following_id"))
+
+
+class Repost(db.Model):
+    __tablename__ = "reposts"
+    repost_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    post_id = db.Column(db.String(36), db.ForeignKey("posts.post_id", ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    __table_args__ = (db.UniqueConstraint("post_id", "user_id"),)
+
+
+class PuzzleAttempt(db.Model):
+    __tablename__ = "puzzle_attempts"
+    attempt_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    puzzle_type = db.Column(db.String(30), nullable=False, index=True)
+    difficulty = db.Column(db.String(20))
+    status = db.Column(db.String(20), nullable=False)
+    duration_seconds = db.Column(db.Integer, nullable=False, default=0)
+    errors = db.Column(db.Integer, nullable=False, default=0)
+    hints_used = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class ScreenTime(db.Model):
+    __tablename__ = "screen_time"
+    screen_time_id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    page_name = db.Column(db.String(40), nullable=False)
+    seconds = db.Column(db.Integer, nullable=False, default=0)
+    entry_date = db.Column(db.Date, nullable=False)
+    __table_args__ = (db.UniqueConstraint("user_id", "page_name", "entry_date"),)

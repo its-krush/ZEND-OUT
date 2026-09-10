@@ -308,7 +308,7 @@
   toggle.checked = localStorage.getItem('zenTheme') === 'dark';
 
   function toggleTheme(){
-    const dark = toggle.checked = !toggle.checked;
+    const dark = toggle.checked;
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     localStorage.setItem('zenTheme', dark ? 'dark' : 'light');
     updateColors();
@@ -343,10 +343,10 @@
 
     try {
       if(editingId !== null){
-        await ZenAPI.updateJournal(editingId, { title, content, visibility: isPublic ? 'public' : 'private' });
+        await ZenAPI.updateJournal(editingId, { title, content, mood: activeMood, visibility: isPublic ? 'public' : 'private' });
         editingId = null;
       } else {
-        await ZenAPI.createJournal({ title, content, visibility: isPublic ? 'public' : 'private' });
+        await ZenAPI.createJournal({ title, content, mood: activeMood, visibility: isPublic ? 'public' : 'private' });
       }
       await renderEntries();
     } catch (_) { showToast('Could not save entry.'); return; }
@@ -392,7 +392,7 @@
     if(libFilter === 'public')  entries = entries.filter(e => e.isPublic);
     if(libFilter === 'private') entries = entries.filter(e => !e.isPublic);
 
-    entries = entries.reverse(); // newest first
+    entries = [...entries].reverse(); // newest first
 
     if(entries.length === 0){
       grid.innerHTML = '<div class="empty-msg">No entries here yet. Start writing!</div>';
@@ -401,15 +401,15 @@
 
     grid.innerHTML = entries.map(e => `
       <div class="entry-card">
-        <div class="entry-card-title">${e.title}</div>
-        <div class="entry-card-preview">${e.content}</div>
+          <div class="entry-card-title">${escapeHTML(e.title)}</div>
+        <div class="entry-card-preview" style="background:${themeMap[e.mood] ? themeMap[e.mood].light : themeMap.default.light}">${escapeHTML(e.content)}</div>
         <div class="entry-card-meta">
           <span>${e.date}</span>
           <span class="badge ${e.isPublic ? 'badge-pub' : 'badge-priv'}">${e.isPublic ? 'Public' : 'Private'}</span>
         </div>
         <div class="entry-card-actions">
-          <button class="ea-btn ea-edit"   onclick="editEntry(${e.id})">Edit</button>
-          <button class="ea-btn ea-delete" onclick="deleteEntry(${e.id})">Delete</button>
+          <button class="ea-btn ea-edit"   onclick="editEntry('${e.id}')">Edit</button>
+          <button class="ea-btn ea-delete" onclick="deleteEntry('${e.id}')">Delete</button>
         </div>
       </div>
     `).join('');
@@ -423,7 +423,8 @@
     document.getElementById('main-editor').value   = entry.content;
     document.getElementById('is-public').checked   = entry.isPublic;
     activeMood = entry.mood || 'default'; updateColors();
-    showWrite();
+    document.getElementById('view-library').classList.remove('active');
+    document.getElementById('view-write').classList.add('active');
   }
 
   async function deleteEntry(id){

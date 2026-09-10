@@ -176,6 +176,8 @@
     .empty-note {
       opacity:0.45; font-size:0.85rem; text-align:center; padding:20px 0;
     }
+    @media (max-width:760px){
+      nav{padding:12px 16px}.nav-right{gap:8px}.nav-right a{font-size:.65rem}.page{padding:26px 14px}.page-title{font-size:2rem}.analytics-grid{grid-template-columns:1fr}.a-card:nth-child(4){grid-column:auto}.journal-stats{gap:8px}.j-stat{padding:12px 6px}.time-row{gap:8px}.time-page{min-width:72px;font-size:.78rem}}
   </style>
   <script>
     (function(){
@@ -293,63 +295,23 @@
   }
   function logout(){ ZenAPI.logout().catch(()=>{}).finally(()=>{ window.location.href='index.html'; }); }
 
-  // ── PUZZLE SCORES ──
-  const arrow  = localStorage.getItem('hs_arrow');
-  const sudoku = localStorage.getItem('hs_sudoku');
-  const ttt    = localStorage.getItem('hs_ttt');
-  const wordle = localStorage.getItem('hs_wordle');
-
-  document.getElementById('sc-arrow').textContent  = arrow  ? 'Level ' + arrow  : '—';
-  document.getElementById('sc-sudoku').textContent = sudoku ? Math.floor(sudoku/60)+'m '+sudoku%60+'s' : '—';
-  document.getElementById('sc-ttt').textContent    = ttt    ? ttt + ' wins'      : '—';
-  document.getElementById('sc-wordle').textContent = wordle ? wordle             : '—';
-
-  // ── SCREEN TIME ──
-  // track time on this page, add to running total
-  const pageStart = Date.now();
-  const pageName  = 'analytics';
-
-  function logTime(){
-    const secs = Math.round((Date.now() - pageStart) / 1000);
-    const key  = 'zen_time_' + currentUser;
-    const times = JSON.parse(localStorage.getItem(key) || '{}');
-    times[pageName] = (times[pageName] || 0) + secs;
-    localStorage.setItem(key, JSON.stringify(times));
-  }
-  window.addEventListener('beforeunload', logTime);
-
-  // render screen time
-  const timeKey  = 'zen_time_' + currentUser;
-  const allTimes = JSON.parse(localStorage.getItem(timeKey) || '{}');
-  const timeList = document.getElementById('screen-time-list');
-  const pages    = ['journal','puzzles','analytics','social','dashboard'];
-  const colors   = ['#a855f7','#6060f4','#14b8a6','#f59e0b','#f43f5e'];
-  const maxTime  = Math.max(...pages.map(p => allTimes[p]||0), 1);
-
-  const hasTime  = pages.some(p => allTimes[p]);
-  if(!hasTime){
-    timeList.innerHTML = '<div class="empty-note">No screen time data yet.</div>';
-  } else {
-    timeList.innerHTML = pages.map((p,i) => {
-      const secs  = allTimes[p] || 0;
-      const label = secs >= 60 ? Math.floor(secs/60)+'m '+secs%60+'s' : secs+'s';
-      const pct   = Math.round((secs/maxTime)*100);
-      return `
-        <div class="time-row">
-          <div class="time-page">${p}</div>
-          <div class="time-bar-wrap">
-            <div class="time-bar" style="width:0%;background:${colors[i]};" data-pct="${pct}"></div>
-          </div>
-          <div class="time-val">${secs>0?label:'—'}</div>
-        </div>`;
-    }).join('');
-    // animate bars after render
-    setTimeout(()=>{
-      document.querySelectorAll('.time-bar').forEach(b=>{
-        b.style.width = b.getAttribute('data-pct') + '%';
-      });
-    }, 100);
-  }
+  // ── SERVER-BACKED ACTIVITY ──
+  const renderAnalytics = (data) => {
+    const puzzles = data.puzzles || {};
+    const label = type => puzzles[type] ? `${puzzles[type].solved} solved · ${puzzles[type].unsolved} unsolved` : '—';
+    document.getElementById('sc-arrow').textContent = label('arrow');
+    document.getElementById('sc-sudoku').textContent = label('sudoku');
+    document.getElementById('sc-ttt').textContent = label('ttt');
+    document.getElementById('sc-wordle').textContent = label('wordle');
+    const allTimes = data.screen_time || {};
+    const timeList = document.getElementById('screen-time-list');
+    const pages = ['journal','puzzles','analytics','social','dashboard'];
+    const colors = ['#a855f7','#6060f4','#14b8a6','#f59e0b','#f43f5e'];
+    const maxTime = Math.max(...pages.map(p => allTimes[p]||0), 1);
+    if(!pages.some(p=>allTimes[p])) timeList.innerHTML='<div class="empty-note">No screen time data yet.</div>';
+    else timeList.innerHTML=pages.map((p,i)=>{const secs=allTimes[p]||0;const label=secs>=60?Math.floor(secs/60)+'m '+secs%60+'s':secs+'s';const pct=Math.round(secs/maxTime*100);return `<div class="time-row"><div class="time-page">${p}</div><div class="time-bar-wrap"><div class="time-bar" style="width:${pct}%;background:${colors[i]};"></div></div><div class="time-val">${secs?label:'—'}</div></div>`;}).join('');
+  };
+  ZenAuthReady.then(()=>ZenAPI.analytics()).then(renderAnalytics).catch(()=>{});
 
   // ── JOURNAL STATS ──
   ZenAuthReady.then(async () => {
@@ -366,14 +328,7 @@
     } else bestWrap.innerHTML = '<div class="empty-note">No public entries yet.</div>';
   }).catch(() => {});
 
-  // ── WORDLE PROGRESS ──
-  const streak     = parseInt(localStorage.getItem('wordle_streak'))||0;
-  const bestStreak = parseInt(localStorage.getItem('hs_wordle'))||0;
-  const wordsPlayed = JSON.parse(localStorage.getItem('wordle_used')||'[]').length;
-
-  document.getElementById('wordle-streak-big').textContent  = streak;
-  document.getElementById('wordle-best').textContent        = bestStreak || '—';
-  document.getElementById('wordle-words-played').textContent = wordsPlayed + ' words played so far';
+  // Wordle streak remains a gameplay-only client display until streak history is modeled server-side.
 </script>
 </body>
 </html>

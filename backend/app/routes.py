@@ -12,7 +12,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy import func, or_
 
 from .extensions import csrf, db, limiter
-from .models import Comment, Follow, Journal, Like, PasswordResetToken, Post, Profile, User
+from .models import Comment, Follow, Journal, Like, PasswordResetToken, Post, Profile, PuzzleAttempt, Repost, ScreenTime, User
 
 api = Blueprint("api", __name__)
 
@@ -221,7 +221,7 @@ def create_journal():
     title, content = str(data.get("title", "")).strip(), str(data.get("content", ""))
     if not title or len(title) > 200 or len(content) > 100000:
         return jsonify(error="invalid_journal"), 400
-    journal = Journal(user_id=user.user_id, title=title, content=content, visibility=data.get("visibility", "private"))
+    journal = Journal(user_id=user.user_id, title=title, content=content, visibility=data.get("visibility", "private"), mood_summary=data.get("mood", "default"))
     db.session.add(journal)
     db.session.commit()
     return jsonify(id=journal.journal_id), 201
@@ -241,6 +241,7 @@ def update_journal(journal_id):
         return jsonify(error="invalid_journal"), 400
     journal.title, journal.content = title, content
     journal.visibility = data.get("visibility", journal.visibility)
+    journal.mood_summary = data.get("mood", journal.mood_summary or "default")
     db.session.commit()
     return jsonify(id=journal.journal_id)
 
@@ -277,7 +278,7 @@ def social_feed():
     for journal in journals:
         post = ensure_post_for_journal(journal)
         author = User.query.get(journal.user_id)
-        result.append({"id": post.post_id, "user": author.username, "title": journal.title, "content": journal.content, "date": journal.created_at.strftime("%b %d, %Y"), "isPublic": True, "like_count": Like.query.filter_by(post_id=post.post_id).count(), "comment_count": Comment.query.filter_by(post_id=post.post_id).count()})
+        result.append({"id": post.post_id, "user": author.username, "title": journal.title, "content": journal.content, "date": journal.created_at.strftime("%b %d, %Y"), "isPublic": True, "like_count": Like.query.filter_by(post_id=post.post_id).count(), "liked": Like.query.filter_by(post_id=post.post_id, user_id=user.user_id).first() is not None, "comment_count": Comment.query.filter_by(post_id=post.post_id).count(), "repost_count": Repost.query.filter_by(post_id=post.post_id).count(), "reposted": Repost.query.filter_by(post_id=post.post_id, user_id=user.user_id).first() is not None})
     db.session.commit()
     return jsonify(result)
 
@@ -323,6 +324,22 @@ def toggle_like(post_id):
     return jsonify(liked=liked, count=Like.query.filter_by(post_id=post_id).count())
 
 
+@api.post("/social/posts/<post_id>/repost")
+def toggle_repost(post_id):
+    user = current_user()
+    if not user or not Post.query.get(post_id):
+        return jsonify(error="not_found"), 404
+    repost = Repost.query.filter_by(post_id=post_id, user_id=user.user_id).first()
+    if repost:
+        db.session.delete(repost)
+        reposted = False
+    else:
+        db.session.add(Repost(post_id=post_id, user_id=user.user_id))
+        reposted = True
+    db.session.commit()
+    return jsonify(reposted=reposted, count=Repost.query.filter_by(post_id=post_id).count())
+
+
 @api.get("/social/posts/<post_id>/comments")
 def list_comments(post_id):
     if not current_user() or not Post.query.get(post_id):
@@ -341,3 +358,56 @@ def create_comment(post_id):
     db.session.add(Comment(post_id=post_id, user_id=user.user_id, comment_text=text))
     db.session.commit()
     return jsonify(message="comment_created"), 201
+
+
+@api.post("/activity/puzzles")
+def record_puzzle_attempt():
+    user = current_user()
+    if not user:
+        return jsonify(error="unauthorized"), 401
+    data = request.get_json(silent=True) or {}
+    puzzle_type, status = str(data.get("puzzle_type", "")), str(data.get("status", ""))
+    if puzzle_type not in {"sudoku", "ttt", "wordle", "arrow"} or status not in {"solved", "unsolved", "game_over"}:
+        return jsonify(error="invalid_puzzle_result"), 400
+    attempt = PuzzleAttempt(user_id=user.user_id, puzzle_type=puzzle_type, difficulty=data.get("difficulty"), status=status, duration_seconds=max(0, int(data.get("duration_seconds", 0))), errors=max(0, int(data.get("errors", 0))), hints_used=max(0, int(data.get("hints_used", 0))))
+    db.session.add(attempt)
+    db.session.commit()
+    return jsonify(id=attempt.attempt_id), 201
+
+
+@api.get("/analytics")
+def analytics():
+    user = current_user()
+    if not user:
+        return jsonify(error="unauthorized"), 401
+    attempts = PuzzleAttempt.query.filter_by(user_id=user.user_id).all()
+    puzzle_stats = {}
+    for attempt in attempts:
+        stat = puzzle_stats.setdefault(attempt.puzzle_type, {"solved": 0, "unsolved": 0, "games": 0, "seconds": 0})
+        stat["games"] += 1
+        stat["seconds"] += attempt.duration_seconds
+        if attempt.status == "solved": stat["solved"] += 1
+        else: stat["unsolved"] += 1
+    times = {page: 0 for page in ["journal", "puzzles", "analytics", "social", "dashboard"]}
+    for row in ScreenTime.query.filter_by(user_id=user.user_id).all():
+        times[row.page_name] = times.get(row.page_name, 0) + row.seconds
+    return jsonify(puzzles=puzzle_stats, screen_time=times)
+
+
+@api.post("/analytics/screen-time")
+def record_screen_time():
+    user = current_user()
+    if not user:
+        return jsonify(error="unauthorized"), 401
+    data = request.get_json(silent=True) or {}
+    page_name, seconds = str(data.get("page_name", "")), max(0, min(int(data.get("seconds", 0)), 86400))
+    if page_name not in {"journal", "puzzles", "analytics", "social", "dashboard"}:
+        return jsonify(error="invalid_page"), 400
+    from datetime import date
+    row = ScreenTime.query.filter_by(user_id=user.user_id, page_name=page_name, entry_date=date.today()).first()
+    if not row:
+        row = ScreenTime(user_id=user.user_id, page_name=page_name, entry_date=date.today(), seconds=0)
+        db.session.add(row)
+    row.seconds += seconds
+    db.session.commit()
+    return jsonify(seconds=row.seconds)

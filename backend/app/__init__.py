@@ -1,8 +1,9 @@
 import os
 from datetime import timedelta
+from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 
 from .extensions import csrf, db, limiter
@@ -10,11 +11,20 @@ from .extensions import csrf, db, limiter
 load_dotenv()
 
 
+def database_url():
+    url = os.environ.get("DATABASE_URL", "sqlite:///zendout.db")
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://"):]
+    return url
+
+
 def create_app(test_config=None):
     app = Flask(__name__)
     app.config.from_mapping(
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev-only-change-me"),
-        SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", "sqlite:///zendout.db"),
+        SQLALCHEMY_DATABASE_URI=database_url(),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -34,6 +44,21 @@ def create_app(test_config=None):
     limiter.init_app(app)
     from .routes import api
     app.register_blueprint(api, url_prefix="/api")
+
+    frontend_root = Path(app.root_path).parent.parent
+
+    @app.get("/")
+    def frontend_index():
+        return send_from_directory(frontend_root, "index.html")
+
+    @app.get("/<path:filename>")
+    def frontend_file(filename):
+        if filename == "api" or filename.startswith("api/"):
+            return jsonify(error="not_found"), 404
+        candidate = frontend_root / filename
+        if candidate.is_file() and (candidate.suffix.lower() in {".html", ".js", ".css", ".png", ".jpg", ".jpeg", ".svg", ".webp", ".ico"} or filename.startswith("images/")):
+            return send_from_directory(frontend_root, filename)
+        return jsonify(error="not_found"), 404
 
     @app.errorhandler(413)
     def too_large(_):

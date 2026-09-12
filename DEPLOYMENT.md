@@ -1,11 +1,11 @@
 # Deployment
 
-The backend is deployable as a Flask WSGI service with Gunicorn. Set the following deployment secrets and environment variables; never commit `.env` or paste real values into HTML/JavaScript:
+The repository is deployable as one Flask WSGI service with Gunicorn: Flask serves both `/api/*` and the existing static HTML/image files. Set the following deployment secrets and environment variables; never commit `.env` or paste real values into HTML/JavaScript:
 
 ```env
 FLASK_ENV=production
 SECRET_KEY=<long-random-secret>
-DATABASE_URL=postgresql+psyc://<user>:<password>@<host>:5432/<database>
+DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>:5432/<database>
 FRONTEND_ORIGINS=https://your-frontend.example
 FRONTEND_BASE_URL=https://your-frontend.example
 SESSION_COOKIE_SECURE=true
@@ -17,14 +17,14 @@ MAIL_PASSWORD=<smtp-password>
 MAIL_DEFAULT_SENDER=no-reply@your-domain.example
 ```
 
-Deploy the `backend/` service with the included `Procfile` or equivalent command:
+Deploy the service with the included `Procfile` or equivalent command:
 
 ```bash
 cd backend
 gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app
 ```
 
-Serve the static HTML files from the same origin or configure a reverse proxy so `/api` routes to Flask. If the frontend is hosted separately, set `window.ZEN_API_BASE` before loading `api.js` and list the exact frontend origin in `FRONTEND_ORIGINS`.
+The recommended beginner deployment is this single-service setup because it avoids cross-origin cookie configuration. If the frontend is hosted separately, set `window.ZEN_API_BASE` before loading `api.js` and list the exact frontend origin in `FRONTEND_ORIGINS`.
 
 Apply migrations manually, in order, to the intended development or production database using a migration approval process:
 

@@ -4,10 +4,17 @@ import pytest
 
 os.environ["EMAIL_VERIFICATION_REQUIRED"] = "false"
 
-from app import create_app
+from app import create_app, database_url
 from app.extensions import db
 from app.models import PasswordResetToken, User
 import app.routes as routes
+
+
+def test_provider_postgres_urls_use_psycopg(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@example.com:5432/app")
+    assert database_url() == "postgresql+psycopg://user:pass@example.com:5432/app"
+    monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@example.com:5432/app")
+    assert database_url() == "postgresql+psycopg://user:pass@example.com:5432/app"
 
 
 @pytest.fixture()

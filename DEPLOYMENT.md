@@ -4,6 +4,8 @@ The repository is deployable as one Flask WSGI service with Gunicorn: Flask serv
 
 The dependency file is intentionally at the repository root as `requirements.txt`, because Render, Heroku, and most Python buildpacks run `pip install -r requirements.txt` from the repository root.
 
+The repository also includes `render.yaml`. Use **New → Blueprint** in Render and select this repository/branch. Render will create the web service and PostgreSQL database, generate `SECRET_KEY`, set the build/start commands, and preserve environment values on later Blueprint syncs. Render will prompt for the SMTP values marked `sync: false` once; those credentials must remain secret and cannot safely be committed to GitHub.
+
 ```env
 FLASK_ENV=production
 SECRET_KEY=<long-random-secret>

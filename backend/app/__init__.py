@@ -37,7 +37,10 @@ def create_app(test_config=None):
         app.config.update(test_config)
     if app.config["SECRET_KEY"] == "dev-only-change-me" and os.environ.get("FLASK_ENV") == "production":
         raise RuntimeError("SECRET_KEY must be set in production")
-    origins = [x.strip() for x in os.environ.get("FRONTEND_ORIGINS", "http://localhost:8000").split(",") if x.strip()]
+    configured_origins = os.environ.get("FRONTEND_ORIGINS", "").strip()
+    if not configured_origins and os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+        configured_origins = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}"
+    origins = [x.strip() for x in (configured_origins or "http://localhost:8000").split(",") if x.strip()]
     CORS(app, origins=origins, supports_credentials=True, methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"])
     db.init_app(app)
     csrf.init_app(app)

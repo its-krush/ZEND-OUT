@@ -1,4 +1,17 @@
 CREATE TABLE IF NOT EXISTS reposts (repost_id varchar(36) PRIMARY KEY, post_id varchar(36) NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE, user_id varchar(36) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(post_id, user_id));
+
+DO $$
+BEGIN
+  IF to_regclass('public.puzzle_attempts') IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'puzzle_attempts' AND column_name = 'puzzle_type'
+     )
+     AND to_regclass('public.puzzle_attempts_legacy') IS NULL THEN
+    ALTER TABLE puzzle_attempts RENAME TO puzzle_attempts_legacy;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS puzzle_attempts (attempt_id varchar(36) PRIMARY KEY, user_id varchar(36) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE, puzzle_type varchar(30) NOT NULL, difficulty varchar(20), status varchar(20) NOT NULL, duration_seconds int NOT NULL DEFAULT 0, errors int NOT NULL DEFAULT 0, hints_used int NOT NULL DEFAULT 0, created_at timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS ix_puzzle_attempts_user_type ON puzzle_attempts(user_id, puzzle_type);
 CREATE TABLE IF NOT EXISTS screen_time (screen_time_id varchar(36) PRIMARY KEY, user_id varchar(36) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE, page_name varchar(40) NOT NULL, seconds int NOT NULL DEFAULT 0, entry_date date NOT NULL, UNIQUE(user_id, page_name, entry_date));

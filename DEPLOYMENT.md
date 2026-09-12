@@ -21,16 +21,17 @@ MAIL_PASSWORD=<smtp-password>
 MAIL_DEFAULT_SENDER=no-reply@your-domain.example
 ```
 
-Deploy the service with the included `Procfile` or equivalent command:
+Deploy the service with the included `render.yaml` or equivalent command:
 
 ```bash
+python backend/migrate.py
 cd backend
 gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app
 ```
 
 The recommended beginner deployment is this single-service setup because it avoids cross-origin cookie configuration. If the frontend is hosted separately, set `window.ZEN_API_BASE` before loading `api.js` and list the exact frontend origin in `FRONTEND_ORIGINS`.
 
-Apply migrations manually, in order, to the intended development or production database using a migration approval process:
+The Render Blueprint runs the idempotent migration runner before Gunicorn starts, so a new Render database is initialized automatically. If you are deploying outside Render, apply migrations manually, in order, to the intended database:
 
 ```bash
 psql "$DATABASE_URL" -f backend/migrations/001_initial.sql

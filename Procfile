@@ -1,1 +1,1 @@
-web: cd backend && gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app
+web: python backend/migrate.py && cd backend && gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app

@@ -2,6 +2,8 @@
 
 The repository is deployable as one Flask WSGI service with Gunicorn: Flask serves both `/api/*` and the existing static HTML/image files. Set the following deployment secrets and environment variables; never commit `.env` or paste real values into HTML/JavaScript:
 
+The dependency file is intentionally at the repository root as `requirements.txt`, because Render, Heroku, and most Python buildpacks run `pip install -r requirements.txt` from the repository root.
+
 ```env
 FLASK_ENV=production
 SECRET_KEY=<long-random-secret>

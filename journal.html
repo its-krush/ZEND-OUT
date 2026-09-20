@@ -295,17 +295,20 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="api.js"></script>
+<script src="auth-guard.js"></script>
 <script>
   // ── auth guard ──
-  const currentUser = localStorage.getItem('zen_user');
-  if(!currentUser) window.location.href = 'index.html';
+  let currentUser = '';
+  let entriesCache = [];
+  ZenAuthReady.then(async profile => { currentUser = profile.username; await renderEntries(); });
 
   // ── theme ──
   const toggle = document.getElementById('theme-toggle');
   toggle.checked = localStorage.getItem('zenTheme') === 'dark';
 
   function toggleTheme(){
-    const dark = toggle.checked = !toggle.checked;
+    const dark = toggle.checked;
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     localStorage.setItem('zenTheme', dark ? 'dark' : 'light');
     updateColors();
@@ -330,7 +333,7 @@
   let editingId = null;
 
   // ── save entry ──
-  function saveEntry(){
+  async function saveEntry(){
     const title   = document.getElementById('entry-title').value.trim();
     const content = document.getElementById('main-editor').value.trim();
     const isPublic = document.getElementById('is-public').checked;
@@ -338,25 +341,15 @@
     if(!title){ showToast('Please add a title!'); return; }
     if(!content){ showToast('Entry is empty!'); return; }
 
-    const entries = getEntries();
-
-    if(editingId !== null){
-      const idx = entries.findIndex(e => e.id === editingId);
-      if(idx !== -1){
-        entries[idx] = { ...entries[idx], title, content, isPublic, mood: activeMood };
+    try {
+      if(editingId !== null){
+        await ZenAPI.updateJournal(editingId, { title, content, mood: activeMood, visibility: isPublic ? 'public' : 'private' });
+        editingId = null;
+      } else {
+        await ZenAPI.createJournal({ title, content, mood: activeMood, visibility: isPublic ? 'public' : 'private' });
       }
-      editingId = null;
-    } else {
-      entries.push({
-        id:       Date.now(),
-        user:     currentUser,
-        title, content, isPublic,
-        mood:     activeMood,
-        date:     new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
-      });
-    }
-
-    saveEntries(entries);
+      await renderEntries();
+    } catch (_) { showToast('Could not save entry.'); return; }
     document.getElementById('entry-title').value = '';
     document.getElementById('main-editor').value = '';
     document.getElementById('is-public').checked = false;
@@ -364,13 +357,9 @@
     showToast('Entry saved! ✨');
   }
 
-  // ── localStorage helpers ──
-  function getEntries(){
-    return JSON.parse(localStorage.getItem('zen_entries') || '[]');
-  }
-  function saveEntries(arr){
-    localStorage.setItem('zen_entries', JSON.stringify(arr));
-  }
+  // ── server persistence ──
+  async function loadEntries(){ entriesCache = await ZenAPI.listJournals(); return entriesCache; }
+  function getEntries(){ return entriesCache; }
 
   // ── library ──
   let libFilter = 'all';
@@ -396,14 +385,14 @@
     renderEntries();
   }
 
-  function renderEntries(){
+  async function renderEntries(){
     const grid = document.getElementById('entries-grid');
-    let entries = getEntries().filter(e => e.user === currentUser);
+    let entries = await loadEntries();
 
     if(libFilter === 'public')  entries = entries.filter(e => e.isPublic);
     if(libFilter === 'private') entries = entries.filter(e => !e.isPublic);
 
-    entries = entries.reverse(); // newest first
+    entries = [...entries].reverse(); // newest first
 
     if(entries.length === 0){
       grid.innerHTML = '<div class="empty-msg">No entries here yet. Start writing!</div>';
@@ -412,15 +401,15 @@
 
     grid.innerHTML = entries.map(e => `
       <div class="entry-card">
-        <div class="entry-card-title">${e.title}</div>
-        <div class="entry-card-preview">${e.content}</div>
+          <div class="entry-card-title">${escapeHTML(e.title)}</div>
+        <div class="entry-card-preview" style="background:${themeMap[e.mood] ? themeMap[e.mood].light : themeMap.default.light}">${escapeHTML(e.content)}</div>
         <div class="entry-card-meta">
           <span>${e.date}</span>
           <span class="badge ${e.isPublic ? 'badge-pub' : 'badge-priv'}">${e.isPublic ? 'Public' : 'Private'}</span>
         </div>
         <div class="entry-card-actions">
-          <button class="ea-btn ea-edit"   onclick="editEntry(${e.id})">Edit</button>
-          <button class="ea-btn ea-delete" onclick="deleteEntry(${e.id})">Delete</button>
+          <button class="ea-btn ea-edit"   onclick="editEntry('${e.id}')">Edit</button>
+          <button class="ea-btn ea-delete" onclick="deleteEntry('${e.id}')">Delete</button>
         </div>
       </div>
     `).join('');
@@ -434,14 +423,14 @@
     document.getElementById('main-editor').value   = entry.content;
     document.getElementById('is-public').checked   = entry.isPublic;
     activeMood = entry.mood || 'default'; updateColors();
-    showWrite();
+    document.getElementById('view-library').classList.remove('active');
+    document.getElementById('view-write').classList.add('active');
   }
 
-  function deleteEntry(id){
+  async function deleteEntry(id){
     if(!confirm('Delete this entry?')) return;
-    saveEntries(getEntries().filter(e => e.id !== id));
-    renderEntries();
-    showToast('Entry deleted.');
+    try { await ZenAPI.deleteJournal(id); await renderEntries(); showToast('Entry deleted.'); }
+    catch (_) { showToast('Could not delete entry.'); }
   }
 
   // ── toast ──
@@ -452,8 +441,8 @@
   }
 
   // ── logout ──
-  function logout(){
-    localStorage.removeItem('zen_user');
+  async function logout(){
+    await ZenAPI.logout().catch(() => {});
     window.location.href = 'index.html';
   }
 </script>

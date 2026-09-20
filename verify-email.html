@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verify your email | Zen'd Out</title>
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light; font-family: Poppins, sans-serif; color: #403b62; background: #f8f6ff; }
+    body { min-height: 100vh; display: grid; place-items: center; margin: 0; padding: 24px; }
+    .card { max-width: 520px; width: 100%; padding: 42px 34px; border-radius: 28px; background: #fff; box-shadow: 0 20px 60px rgba(87, 69, 145, .14); text-align: center; }
+    h1 { margin: 0 0 12px; font: 42px Righteous, cursive; color: #7161d8; }
+    p { line-height: 1.7; margin: 12px 0 24px; }
+    .status { padding: 14px 16px; border-radius: 14px; background: #f1efff; }
+    .status.error { background: #fff0f1; color: #b42336; }
+    a { display: inline-block; padding: 12px 22px; border-radius: 999px; background: #7161d8; color: #fff; text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Zen'd Out</h1>
+    <h2 id="heading">Verifying your email…</h2>
+    <p id="status" class="status">Please wait while we activate your account.</p>
+    <a id="login" href="index.html" hidden>Continue to login</a>
+  </main>
+  <script src="api.js"></script>
+  <script>
+    (async () => {
+      const status = document.getElementById('status');
+      const heading = document.getElementById('heading');
+      const login = document.getElementById('login');
+      const token = new URLSearchParams(window.location.search).get('token');
+      if (!token) {
+        heading.textContent = 'Verification link unavailable';
+        status.textContent = 'This page needs the verification link from your email.';
+        status.classList.add('error');
+        login.hidden = false;
+        return;
+      }
+      try {
+        await ZenAPI.verifyEmail(token);
+        heading.textContent = 'Email verified';
+        status.textContent = 'Your account is ready. You can now sign in securely.';
+        login.hidden = false;
+      } catch (error) {
+        heading.textContent = 'Verification link unavailable';
+        status.textContent = error.message === 'invalid_or_expired_verification_token'
+          ? 'This verification link is invalid or has expired. Please create a new account or contact support.'
+          : 'We could not verify this email right now. Please try again later.';
+        status.classList.add('error');
+        login.hidden = false;
+      }
+    })();
+  </script>
+</body>
+</html>

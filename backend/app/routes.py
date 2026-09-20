@@ -26,7 +26,8 @@ def send_verification_email(email, token):
     if not server:
         current_app.logger.warning("MAIL_SERVER is not configured; verification email not sent")
         return
-    link = f"{request.host_url.rstrip('/')}/api/auth/verify-email?token={token}"
+    base_url = os.environ.get("FRONTEND_BASE_URL") or request.host_url.rstrip("/")
+    link = f"{base_url}/verify-email.html?token={token}"
     msg = EmailMessage()
     msg["Subject"] = "Verify your Zen'd Out email"
     msg["From"] = os.environ.get("MAIL_DEFAULT_SENDER", "no-reply@example.com")
@@ -45,7 +46,7 @@ def send_password_reset_email(email, raw_token):
     if not server:
         current_app.logger.warning("MAIL_SERVER is not configured; password reset email not sent")
         return
-    base_url = os.environ.get("FRONTEND_BASE_URL", request.host_url.rstrip("/"))
+    base_url = os.environ.get("FRONTEND_BASE_URL") or request.host_url.rstrip("/")
     link = f"{base_url}/reset-password.html?token={raw_token}"
     msg = EmailMessage()
     msg["Subject"] = "Reset your Zen'd Out password"

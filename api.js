@@ -23,6 +23,7 @@ window.ZenAPI = (() => {
   return {
     login: (identifier, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ identifier, password }) }),
     register: (username, email, password) => request('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password }) }),
+    verifyEmail: (token) => request(`/auth/verify-email?token=${encodeURIComponent(token)}`),
     forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
     resetPassword: (token, password) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
     listJournals: () => request('/journals'),

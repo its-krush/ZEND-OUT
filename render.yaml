@@ -21,6 +21,8 @@ services:
         value: "true"
       - key: EMAIL_VERIFICATION_REQUIRED
         value: "true"
+      - key: FRONTEND_BASE_URL
+        sync: false
       - key: MAIL_PORT
         value: "587"
       - key: MAIL_SERVER
